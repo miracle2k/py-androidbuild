@@ -23,24 +23,22 @@ The examples below may not work as is.**
 Example::
 
     from android.build import AndroidProject
-    project = AndroidProject(paths={'sdk': '/opt/android'})
-    project.make()
+
+    project = AndroidProject('AndroidManifest.xml', sdk_dir='/opt/android')
+    apk = project.build()
+    apk.sign('keystore', 'alias', 'name')
+    apk.align()
 
 
 Or::
 
     from android.build import AndroidProject
-    project = AndroidProject(paths={'sdk': '/opt/android'})
-    try:
-        project.compile()
-        for configuration in configurations:
-            res = project.pack_resources(configuration)
-            apk = project.build_apk(res)
-            apk.sign()
-            apk.align()
-    finally:
-        project.clean()
 
+    project = AndroidProject('AndroidManifest.xml', sdk_dir='/opt/android')
+    for lang in ('de', 'en', 'fr'):
+        for density in ('mdpi', 'hdpi',):
+            project.build('%s-%s.apk' % (lang, density),
+                          config='%s,%s' % (lang, density))
 
 Or::
 
