@@ -469,17 +469,21 @@ class AndroidProject(object):
         # TODO: Add libs/ (rj, nf options).
         if not resources:
             resources = path.join(self.bin_dir, 'resources.ap_')
+        if not output:
+            output = path.join(self.bin_dir, 'output.apk')
         self.apkbuilder(
-            outputfile=path.join(self.bin_dir, 'output.apk'),
+            outputfile=output,
             dex=path.join(self.bin_dir, 'classes.dex'),
             zips=[resources]
         )
 
-    def sign(self, keystore, alias, password):
+    def sign(self, keystore, alias, password, apk=None):
         """Sign an APK file.
         """
+        if not apk:
+            apk = path.join(self.bin_dir, 'output.apk')
         self.jarsigner(
-            path.join(self.bin_dir, 'output.apk'),
+            apk,
             keystore=keystore, alias=alias, password=password)
 
     def align(self, apk=None):
