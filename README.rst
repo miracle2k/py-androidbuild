@@ -40,15 +40,27 @@ Or::
             project.build('%s-%s.apk' % (lang, density),
                           config='%s,%s' % (lang, density))
 
-Or::
+Rather than using on the default project layout that ``AndroidProject``
+assumes, you can also use a more low-level API::
 
-    from android.build import AndroidProject
-    project = AndroidProject(paths={'sdk': '/opt/android'})
-    project.generate_r()
-    project.compile_aidl()
-    project.compile_java()
-    project.dex()
-    apk = project.build_apk(project.pack_resources())
-    apk.sign()
-    apk.align()
-    project.clean()
+    platform = get_platform('/opt/android/sdk', target='10')
+    code = platform.compile('AndroidManifest.xml', 'src', 'res')
+    res = platform.pack_resources('AndroidManifest.xml', 'res')
+    apk = p.build_apk('unsigned-unaligned.apk', code, res)
+    code.delete()
+    res.delete()
+
+
+Should it become necessary, you are also free to do things even more
+low-level than that. What follows is a quick overview of all the
+APIs used during a build::
+
+    platform = get_platform('/opt/android/sdk', target='10')
+    platform.generate_r(...)
+    platform.compile_aidl(...)
+    platform.compile_java(...)
+    platform.dex(...)
+    platform.package_resources(...)
+    platform.build_apk(...)
+    platform.sign(...)
+    platform.align(...)

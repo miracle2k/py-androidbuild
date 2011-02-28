@@ -19,6 +19,7 @@ import time
 import fnmatch
 from os import path
 import shutil
+import tempfile
 
 from tools import *
 
@@ -26,25 +27,32 @@ from tools import *
 __all__ = ('AndroidProject', 'PlatformTarget', 'get_platform',)
 
 
-class CodeObj(object):
+class File(object):
+
+    def __init__(self, filename):
+        self.filename = filename
+
+    def delete(self):
+        os.unlink(self.filename)
+
+    def __repr__(self):
+        return '%s <%s>' % (self.__class__.__name__, self.filename)
+
+
+class CodeObj(File):
     """Represents a .dex code file.
     """
-    def __init__(self, filename):
-        self.filename = filename
 
 
-class ResourceObj(object):
+class ResourceObj(File):
     """Represents a packed resource package."""
 
-    def __init__(self, filename):
-        self.filename = filename
 
-
-class Apk(object):
+class Apk(File):
     """Represents an APK file."""
 
     def __init__(self, platform, filename):
-        self.filename = filename
+        File.__init__(self, filename)
         self.platform = platform
 
     def sign(self, *a, **kw):
@@ -154,7 +162,7 @@ class PlatformTarget(object):
             destdir=output_dir,
             bootclasspath=self.framework_library)
 
-    def dex(self, source_dir, output):
+    def dex(self, source_dir, output=None):
         """Dexing is the process of converting Java bytecode to Dalvik
         bytecode.
 
@@ -166,23 +174,40 @@ class PlatformTarget(object):
             $ dx --dex --output=bin/classes.dex bin/classes libs/*.jar
         """
         # TODO: Include libs/*.jar
+        if not output:
+            _, output = tempfile.mkstemp(suffix='.dex')
         output = path.abspath(output)
         self.dx([source_dir], output=output)
         return CodeObj(output)
 
-    def compile(self, dex_output, manifest, source_dir, resource_dir,
-                source_gen_dir, class_gen_dir, **kwargs):
+    def compile(self, manifest, source_dir, resource_dir,
+                source_gen_dir=None, class_gen_dir=None,
+                dex_output=None, **kwargs):
         """Shortcut for the whole process until dexing into a code
         object that we can pack into an APK.
+
+        For directories that you do not specifiy a tenmporary directory
+        will be used and deleted after the build.
         """
-        self.generate_r(manifest, resource_dir, source_gen_dir)
-        self.compile_aidl(source_dir, source_gen_dir)
-        self.compile_java([source_dir, source_gen_dir],
-                          class_gen_dir, **kwargs)
-        return self.dex(class_gen_dir, dex_output)
+        to_delete = []
+        if not source_gen_dir:
+            source_gen_dir = tempfile.mkdtemp()
+            to_delete.append(source_gen_dir)
+        if not class_gen_dir:
+            class_gen_dir = tempfile.mkdtemp()
+            to_delete.append(class_gen_dir)
+        try:
+            self.generate_r(manifest, resource_dir, source_gen_dir)
+            self.compile_aidl(source_dir, source_gen_dir)
+            self.compile_java([source_dir, source_gen_dir],
+                              class_gen_dir, **kwargs)
+            return self.dex(class_gen_dir, output=dex_output)
+        finally:
+            for d in to_delete:
+                shutil.rmtree(d)
 
     def pack_resources(self, manifest, resource_dir, asset_dir=None,
-                       output=None, configurations=None):
+                       configurations=None, output=None):
         """Package all the resource files.
 
         ``configurations`` may be a list of configuration values to be
@@ -192,6 +217,8 @@ class PlatformTarget(object):
             $ aapt package -f -M AndroidManifest.xml -S res/
                 -A assets/ -I android.jar -F out/BASE-CONFIG.ap_
         """
+        if not output:
+            _, output = tempfile.mkstemp(suffix='.ap_')
         output = path.abspath(output)
         kwargs = dict(
             command='package',
