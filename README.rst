@@ -109,3 +109,5 @@ things should be easy to implement.
 
 - Including native libraries is probably yet supported, but at the very
   least untested.
+
+- Some tests would sure be nice.
