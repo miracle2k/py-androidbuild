@@ -34,7 +34,7 @@ Or::
     try:
         project.compile()
         for configuration in configurations:
-            res = project.package_res(configuration)
+            res = project.pack_resources(configuration)
             apk = project.build_apk(res)
             apk.sign()
             apk.align()
@@ -50,7 +50,7 @@ Or::
     project.compile_aidl()
     project.compile_java()
     project.dex()
-    apk = project.build_apk(project.package_res())
+    apk = project.build_apk(project.pack_resources())
     apk.sign()
     apk.align()
     project.clean()

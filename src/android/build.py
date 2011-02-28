@@ -356,7 +356,7 @@ class AndroidProject(object):
         """
         # TODO: get basename from manifest file
         self.compile()
-        self.package_res()
+        self.pack_resources()
         apk = self.build_apk()
         return apk
 
@@ -440,7 +440,7 @@ class AndroidProject(object):
             output=path.join(self.bin_dir, 'classes.dex'),
         )
 
-    def package_res(self, configurations=None, output=None):
+    def pack_resources(self, configurations=None, output=None):
         """Package all the resource files.
 
         ``configurations`` may be a list of configuration values to be
