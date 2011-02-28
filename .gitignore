@@ -1,5 +1,9 @@
 /LOCAL_TODO
 
+# distutils
+/dist
+*.egg-info
+
 # WingiDE
 *.wpr
 

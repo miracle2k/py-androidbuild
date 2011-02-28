@@ -1,0 +1,4 @@
+include README.rst TODO
+
+recursive-include tests *
+recursive-exclude tests *.pyc
