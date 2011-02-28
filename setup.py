@@ -39,6 +39,7 @@ setup(
         'Programming Language :: Python',
         'Topic :: Software Development :: Build Tools',
         ],
+    entry_points = """[console_scripts]\npy-androidbuild = android.script:run\n""",
     packages = find_packages('src'),
     package_dir = {'': 'src'},
 )

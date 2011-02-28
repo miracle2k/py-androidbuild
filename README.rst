@@ -16,7 +16,6 @@ here in detail:
     http://developer.android.com/guide/developing/building/index.html#detailed-build
 
 
-
 Usage
 ~~~~~
 
@@ -83,6 +82,18 @@ APIs used during a build::
     platform.build_apk(...)
     platform.sign(...)
     platform.align(...)
+
+
+Stand-alone script
+-----------------
+
+If you've downloaded the source to an Android application which lacks
+an Ant build script, and you don't want to go through the whole process
+of installing it into Eclipse, you can do:
+
+    $ py-androidbuild SDK_DIR
+
+This will build the project in the current directory.
 
 
 Known Issues
