@@ -1,0 +1,7 @@
+/LOCAL_TODO
+
+# WingiDE
+*.wpr
+
+# Python
+*.pyc
