@@ -16,11 +16,11 @@ here in detail:
     http://developer.android.com/guide/developing/building/index.html#detailed-build
 
 
-**NOTE: This is currently a work in progress. The API isn't finalized.
-The examples below may not work as is.**
 
+Usage
+~~~~~
 
-Example::
+The simplest case will look something like this:
 
     from android.build import AndroidProject
 
@@ -30,17 +30,36 @@ Example::
     apk.align()
 
 
+The ``AndroidProject`` class assumes a default Android directory layout,
+that is it espects to find things like a ``./res`` and a ``./src``
+directory next to the ``AndroidManifest.xml``.
+
+
 Or::
 
     from android.build import AndroidProject
 
     project = AndroidProject('AndroidManifest.xml', sdk_dir='/opt/android')
-    for lang in ('de', 'en', 'fr'):
-        for density in ('mdpi', 'hdpi',):
-            project.build('%s-%s.apk' % (lang, density),
-                          config='%s,%s' % (lang, density))
+    try:
+        for version in ('free', 'pay'):
+            # You may want to hard-exclude certain code so it can't just be
+            # re-enabled, or whatever you need to do.
+            make_adjustments_for_version(version)
 
-Rather than using on the default project layout that ``AndroidProject``
+            # Recompile the code.
+            project.compile()
+
+            # For each version, build different configurations.
+            # In the end, you'll have 12 apk files.
+            for lang in ('de', 'en', 'fr'):
+                for density in ('mdpi', 'hdpi',):
+                    project.build('%s-%s-%s.apk' % (version, lang, density),
+                                  config='%s,%s' % (lang, density))
+    finally:
+        project.clean()
+
+
+Rather than relying on the default project layout that ``AndroidProject``
 assumes, you can also use a more low-level API::
 
     platform = get_platform('/opt/android/sdk', target='10')
@@ -64,3 +83,18 @@ APIs used during a build::
     platform.build_apk(...)
     platform.sign(...)
     platform.align(...)
+
+
+Known Issues
+~~~~~~~~~~~~
+
+Some things still need to be done - mostly because I never used the
+functionality in question. If you do need them, consider submitting
+a patch: The Android build process isn't that complicated, and so those
+things should be easy to implement.
+
+- Renderscript in Honeycomb requires additional build steps that are
+  not yet implemented.
+
+- Including native libraries is probably yet supported, but at the very
+  least untested.
