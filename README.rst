@@ -117,6 +117,32 @@ things should be easy to implement.
 
 - Some tests would sure be nice.
 
+Also, referencing "Library projects" doesn't work yet. This is what
+is necessary to implement it:
+
+- The user specifies a list of references to library projects (reading
+  the dependencies from the Eclipse/Ant-specific source.properties file
+  could be a bonus). This would probably be done on the AndroidProject
+  level.
+
+- In each library, libs/*.jar files are collected and a) used as a
+  classpath with javac, b) are included in the dexing process.
+
+- For each library, it's src/ folder is used a) as a source during
+  AIDL compilation, b) as a source during renderscript compilation,
+  c) as a source folder during java compilation, d) added as a
+  sourcefolder in apkbuider.
+
+- For each library, it's libs/ folder is included in the apkbuilder
+  call as both a "jarfolder" and a "nativefolder".
+
+- We might have to do something with a libraries res/ folder as well
+  (collected by the Ant tools into "project.libraries.res"). The
+  AaptExecLoopTask seems to --auto-add-overlay and a -S option
+  for each such path.
+
+- AaptExecLoopTask also generates a R.java file for each library.
+
 
 Notes on debugging the Android build process
 --------------------------------------------
