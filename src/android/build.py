@@ -223,7 +223,8 @@ class PlatformTarget(object):
                 shutil.rmtree(d)
 
     def pack_resources(self, manifest, resource_dir, asset_dir=None,
-                       configurations=None, output=None):
+                       configurations=None, package_name=None,
+                       version_code=None, version_name=None, output=None):
         """Package all the resource files.
 
         ``configurations`` may be a list of configuration values to be
@@ -243,6 +244,9 @@ class PlatformTarget(object):
             include=[self.framework_library],
             apk_output=output,
             configurations=configurations,
+            rename_manifest_package=package_name,
+            overwrite_version_code=version_code,
+            overwrite_version_name=version_name,
             # There is no error code without overwrite, so
             # let's not even give the user the choice, it
             # would only cause confusion.
@@ -392,8 +396,13 @@ class AndroidProject(object):
         )
         self.code = self.platform.compile(**kwargs)
 
-    def build(self, output=None, config=None):
+    def build(self, output=None, config=None, package_name=None,
+              version_code=None, version_name=None):
         """Shortcut to build everything into a final APK in one step.
+
+        ``package_name`` and ``version`` can be used to change these
+        properties without needing to modify the AndroidManifest.xml
+        file.
         """
         # Make sure the code is compiled
         if not hasattr(self, 'code'):
@@ -411,6 +420,9 @@ class AndroidProject(object):
             resource_dir=self.resource_dir,
             configurations=config,
             output=resource_filename,
+            package_name=package_name,
+            version_code=version_code,
+            version_name=version_name,
         )
         if path.exists(self.asset_dir):
             kwargs.update({'asset_dir': self.asset_dir})

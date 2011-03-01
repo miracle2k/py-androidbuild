@@ -65,6 +65,8 @@ class Aapt(Program):
     def __call__(self, command, manifest=None, resource_dir=None,
                  asset_dir=None, include=[], apk_output=None,
                  r_output=None, configurations=None,
+                 rename_manifest_package=None, overwrite_version_code=None,
+                 overwrite_version_name=None,
                  make_dirs=None, overwrite=None):
         """
         command
@@ -98,6 +100,11 @@ class Aapt(Program):
         self.extend_args(args, ['-S', resource_dir])
         self.extend_args(args, ['-A', asset_dir])
         self.extend_args(args, ['-c', configurations])
+        self.extend_args(
+            args, ['--version-code', "%s" % overwrite_version_code])
+        self.extend_args(args, ['--version-code', overwrite_version_name])
+        self.extend_args(
+            args, ['--rename-manifest-package', rename_manifest_package])
         for item in include:
             self.extend_args(args, ['-I', item])
         self.extend_args(args, ['-F', apk_output])

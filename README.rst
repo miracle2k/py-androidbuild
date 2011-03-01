@@ -58,6 +58,16 @@ Or::
         project.clean()
 
 
+If you need to build multiple versions of your app, you need to use
+different package names:
+
+    ...
+    project.build(package_name='com.foo.app.donate', version_code=5)
+    project.build(package_name='com.foo.app.free', version_code=5)
+
+Note in the previous example how you can also manage your version
+numbers outside of the ``AndroidManifest.xml`` file.
+
 Rather than relying on the default project layout that ``AndroidProject``
 assumes, you can also use a more low-level API::
 
