@@ -29,6 +29,8 @@ __all__ = ('AndroidProject', 'PlatformTarget', 'get_platform',
 
 
 class File(object):
+    """To provide a common delete() method for subclasses.
+    """
 
     def __init__(self, filename):
         self.filename = filename
@@ -50,7 +52,9 @@ class ResourceObj(File):
 
 
 class Apk(File):
-    """Represents an APK file."""
+    """Represents an APK file.
+
+    Because apk.align() is just so nice as an API."""
 
     def __init__(self, platform, filename):
         File.__init__(self, filename)
