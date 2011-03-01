@@ -257,12 +257,12 @@ class PlatformTarget(object):
         return ResourceObj(output)
 
     def build_apk(self, output, code=None, resources=None,
-                  jar_paths=[], native_dirs=[]):
+                  jar_paths=[], native_dirs=[], source_dirs=[]):
         """Build an APK file, using the given code and resource files.
         """
         output = path.abspath(output)
         kwargs = dict(outputfile=output, jar_paths=jar_paths,
-                      native_dirs=native_dirs)
+                      native_dirs=native_dirs, source_dirs=source_dirs)
         if code:
             kwargs['dex'] = code.filename \
                   if isinstance(code, CodeObj) else code
@@ -433,7 +433,8 @@ class AndroidProject(object):
             path.join(self.out_dir, '%s.apk' % self.name),
             code=self.code, resources=resources,
             jar_paths=only_existing([self.lib_dir]),
-            native_dirs=only_existing([self.lib_dir]))
+            native_dirs=only_existing([self.lib_dir]),
+            source_dirs=only_existing([self.source_dir]))
         return apk
 
     def clean(self):
