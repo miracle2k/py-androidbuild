@@ -105,7 +105,7 @@ Enabling logging
 
 To see what the build is doing, configure the library logger::
 
-    logging.getLogger('py-androidbuild').addHandler(logging.streamHandler())
+    logging.getLogger('py-androidbuild').addHandler(logging.StreamHandler())
 
 If something goes wrong, an ``ProgramFailedError`` is raised which holds
 all the relevant information::
