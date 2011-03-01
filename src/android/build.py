@@ -24,7 +24,8 @@ import tempfile
 from tools import *
 
 
-__all__ = ('AndroidProject', 'PlatformTarget', 'get_platform',)
+__all__ = ('AndroidProject', 'PlatformTarget', 'get_platform',
+           'ProgramFailedError')
 
 
 class File(object):

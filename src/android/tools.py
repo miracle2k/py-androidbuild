@@ -17,11 +17,32 @@ limitations under the License.
 import subprocess
 
 
-__all__ = ('Aapt', 'Aidl', 'ApkBuilder', 'Dx', 'JarSigner', 'JavaC',
-           'ZipAlign')
+__all__ = ('ProgramFailedError', 'Aapt', 'Aidl', 'ApkBuilder',
+           'Dx', 'JarSigner', 'JavaC', 'ZipAlign',)
 
 
-_DEBUG = False
+class ProgramFailedError(RuntimeError):
+    """Holds information about the failure.
+    """
+
+    def __init__(self, cmdline, returncode, stdout=None, stderr=None):
+        if isinstance(cmdline, (tuple, list)):
+            cmdline = " ".join(cmdline)
+        self.cmdline = cmdline
+        self.returncode = returncode
+        self.stdout = stdout
+        self.stderr = stderr
+
+    @property
+    def message(self):
+        return self.__str__()
+
+    def __unicode__(self):
+        return u'%s failed with code %s' % (
+            self.cmdline, self.returncode)
+
+    def __str__(self):
+        return self.__unicode__().encode('ascii', '?')
 
 
 class Program(object):
@@ -43,19 +64,16 @@ class Program(object):
             self.__class__.__name__, repr(self.executable))
 
     def __call__(self, arguments):
-        print " ".join([self.executable] + arguments)
-        if _DEBUG:
-            return
+        cmdline = " ".join([self.executable] + arguments)
         process = subprocess.Popen([self.executable] + arguments,
                                    stderr=subprocess.PIPE,
                                    stdout=subprocess.PIPE)
         process.wait()
         if process.returncode != 0:
-            print process.stderr.read()
-            print process.stdout.read()
-            raise RuntimeError('%s: returned error code %s' % (
-                " ".join([self.executable] + arguments),
-                process.returncode))
+            raise ProgramFailedError(
+                cmdline,
+                process.returncode, process.stderr.read(),
+                process.stdout.read())
 
 
 class Aapt(Program):

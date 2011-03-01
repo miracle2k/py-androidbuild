@@ -17,7 +17,7 @@ limitations under the License.
 import sys
 from os import path
 
-from build import AndroidProject
+from build import AndroidProject, ProgramFailedError
 
 
 def main(argv):
@@ -27,17 +27,30 @@ def main(argv):
           print "Usage: %s PATH_TO_SDK" % scriptname
           return 1
      p = AndroidProject('AndroidManifest.xml', sdk_dir=argv[0])
-     apk = p.build()
 
-     keystore = path.expanduser('~/.android/debug.keystore')
-     if path.exists(keystore):
-          print "Signing with debug key..."
-          apk.sign(keystore, 'androiddebugkey', 'android')
-          apk.align()
-     else:
-          print "Note: Package will be unsigned!"
+     try:
+          apk = p.build()
 
-     print "Created: %s" % apk.filename
+          keystore = path.expanduser('~/.android/debug.keystore')
+          if path.exists(keystore):
+               print "Signing with debug key..."
+               apk.sign(keystore, 'androiddebugkey', 'android')
+               apk.align()
+          else:
+               print "Note: Package will be unsigned!"
+
+          print "Created: %s" % apk.filename
+     except ProgramFailedError, e:
+          print u"ERROR: %s" % unicode(e)
+          print
+          if e.stdout:
+               print "STDOUT"
+               print "------"
+               print e.stdout
+          if e.stderr:
+               print "STDERR"
+               print "------"
+               print e.stderr
 
 
 def run():
