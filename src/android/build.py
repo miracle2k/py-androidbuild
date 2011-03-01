@@ -447,8 +447,10 @@ class AndroidProject(object):
         resources = self.platform.pack_resources(**kwargs)
 
         # Put everything into an APK.
+        if not output:
+            output = path.join(self.out_dir, '%s.apk' % self.name)
         apk = self.platform.build_apk(
-            path.join(self.out_dir, '%s.apk' % self.name),
+            output,
             code=self.code, resources=resources,
             jar_paths=only_existing([self.lib_dir]),
             native_dirs=only_existing([self.lib_dir]),
