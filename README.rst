@@ -25,7 +25,7 @@ Installation
 Usage
 ~~~~~
 
-The simplest case will look something like this:
+The simplest case will look something like this::
 
     from android.build import AndroidProject
 
