@@ -104,10 +104,25 @@ functionality in question. If you do need them, consider submitting
 a patch: The Android build process isn't that complicated, and so those
 things should be easy to implement.
 
+- Building against extension targets like the Google Maps package
+  hasn't been tested and might well not be possible yet.
+
 - Renderscript in Honeycomb requires additional build steps that are
   not yet implemented.
 
 - Including native libraries is probably yet supported, but at the very
   least untested.
 
+- ProGuard obfuscation is not implememented.
+
 - Some tests would sure be nice.
+
+
+Notes on debugging the Android build process
+--------------------------------------------
+
+Important files are:
+
+- platform/sdk: files/ant/main_rules.xml
+- platform/sdk: anttasks/src/com/android/ant/AntConstants.java
+- platform/sdk: anttasks/src/com/android/ant/SetupTask.java
