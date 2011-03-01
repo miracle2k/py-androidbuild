@@ -138,13 +138,18 @@ class JavaC(Program):
     """
 
     def __call__(self, files, destdir=None, encoding=None,
-                 target=None, bootclasspath=None, debug=None):
+                 target=None, classpath=[], bootclasspath=None,
+                 debug=None):
         """
         files
             Files to be compiled (<source files>).
 
         destdir
             Where to place generated class files (-d).
+
+        classpath
+            Where to find user class files and annotation
+            processors (-classpath). Expected to be a list.
 
         bootclasspath
             Location of bootstrap class files (-bootclasspath).
@@ -160,6 +165,8 @@ class JavaC(Program):
         self.extend_args(args, ['-target', target])
         self.extend_args(args, ['-source', target])
         self.extend_args(args, ['-d', destdir])
+        self.extend_args(
+            args, ['-classpath', ":".join(classpath)], classpath)
         self.extend_args(args, ['-bootclasspath', bootclasspath])
         args.extend(['-g' if debug else '-g:none'])
         args.extend(files)
@@ -194,7 +201,8 @@ class ApkBuilder(Program):
     to find a version better suited to be used.
     """
 
-    def __call__(self, outputfile, dex=None, zips=[], source_dirs=[]):
+    def __call__(self, outputfile, dex=None, zips=[], source_dirs=[],
+                 jar_paths=[], native_dirs=[]):
         """
         outputfile
             The APK file to create (<out archive>).
@@ -207,6 +215,12 @@ class ApkBuilder(Program):
 
         source_dirs
             Adds the java resources found in that folder (-rf).
+
+        jar_paths
+            List of jar files or folders containing jar files to add (-rj).
+
+        native_dirs
+            List of folders containing native libraries to add (-nf).
         """
         args = [outputfile]
         args.extend(['-u'])  # unsigned
@@ -215,6 +229,10 @@ class ApkBuilder(Program):
             args.extend(['-z', zip])
         for source_dir in source_dirs:
             args.extend(['-rf', source_dir])
+        for item in jar_paths:
+            args.extend(['-rj', item])
+        for item in native_dirs:
+            args.extend(['-nf', item])
         Program.__call__(self, args)
 
 

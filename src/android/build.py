@@ -143,26 +143,40 @@ class PlatformTarget(object):
                 output_folder=output_dir,
             )
 
-    def compile_java(self, source_dirs, output_dir, debug=False,
-                     target='1.5'):
+    def _collect_jars(self, paths):
+        jar_files = []
+        for item in paths:
+            if path.isdir(item):
+                jar_files += recursive_glob(item, '*.jar')
+            else:
+                jar_files.append(item)
+        return jar_files
+
+    def compile_java(self, source_dirs, output_dir, extra_jars=[],
+                     debug=False, target='1.5'):
         """Compile all *.java files in ``source_dirs`` (a list of
         directories) and store the class files in ``output_dir``.
+
+        ``extra_jars`` will be added to the classpath. The list may
+        include both .jar files as well as directories, which will
+        recursively be searched for .jar files.
         """
         # Collect all files to be compiled
-        files = []
+        source_files = []
         for directory in source_dirs:
-            files += recursive_glob(directory, '*.java')
+            source_files += recursive_glob(directory, '*.java')
+        jar_files = self._collect_jars(extra_jars)
         # TODO: check if files are up-to-date?
-        # TODO: Include libs/*.jar as -classpath
         mkdir(output_dir, True)
         self.javac(
-            files,
+            source_files,
             target=target,
             debug=debug,
             destdir=output_dir,
+            classpath=jar_files,
             bootclasspath=self.framework_library)
 
-    def dex(self, source_dir, output=None):
+    def dex(self, source_dir, output=None, extra_jars=[]):
         """Dexing is the process of converting Java bytecode to Dalvik
         bytecode.
 
@@ -173,16 +187,16 @@ class PlatformTarget(object):
 
             $ dx --dex --output=bin/classes.dex bin/classes libs/*.jar
         """
-        # TODO: Include libs/*.jar
         if not output:
             _, output = tempfile.mkstemp(suffix='.dex')
         output = path.abspath(output)
-        self.dx([source_dir], output=output)
+        jar_files = self._collect_jars(extra_jars)
+        self.dx([source_dir] + jar_files, output=output)
         return CodeObj(output)
 
     def compile(self, manifest, source_dir, resource_dir,
                 source_gen_dir=None, class_gen_dir=None,
-                dex_output=None, **kwargs):
+                dex_output=None, extra_jars=[], **kwargs):
         """Shortcut for the whole process until dexing into a code
         object that we can pack into an APK.
 
@@ -200,8 +214,10 @@ class PlatformTarget(object):
             self.generate_r(manifest, resource_dir, source_gen_dir)
             self.compile_aidl(source_dir, source_gen_dir)
             self.compile_java([source_dir, source_gen_dir],
-                              class_gen_dir, **kwargs)
-            return self.dex(class_gen_dir, output=dex_output)
+                              class_gen_dir, extra_jars=extra_jars,
+                              **kwargs)
+            return self.dex(class_gen_dir, output=dex_output,
+                            extra_jars=extra_jars)
         finally:
             for d in to_delete:
                 shutil.rmtree(d)
@@ -236,12 +252,13 @@ class PlatformTarget(object):
         self.aapt(**kwargs)
         return ResourceObj(output)
 
-    def build_apk(self, output, code=None, resources=None):
-        """Build an APK file, using the given resource package.
+    def build_apk(self, output, code=None, resources=None,
+                  jar_paths=[], native_dirs=[]):
+        """Build an APK file, using the given code and resource files.
         """
-        # TODO: Add libs/ (rj, nf options).
         output = path.abspath(output)
-        kwargs = dict(outputfile=output)
+        kwargs = dict(outputfile=output, jar_paths=jar_paths,
+                      native_dirs=native_dirs)
         if code:
             kwargs['dex'] = code.filename \
                   if isinstance(code, CodeObj) else code
@@ -321,6 +338,11 @@ def mkdir(directory, recursive=False):
             os.mkdir(directory)
 
 
+def only_existing(paths):
+    """Return only those paths that actually exists."""
+    return filter(lambda p: path.exists(p), paths)
+
+
 class AndroidProject(object):
     """Represents an Android project to be built.
 
@@ -347,6 +369,7 @@ class AndroidProject(object):
         self.source_dir = path.join(project_dir, 'src')
         self.out_dir = path.join(project_dir, 'bin')
         self.asset_dir = path.join(project_dir, 'asset')
+        self.lib_dir = path.join(project_dir, 'libs')
 
         if not name:
             # if no name is given, inspect the manifest
@@ -358,14 +381,16 @@ class AndroidProject(object):
     def compile(self):
         """Force a recompile of the project.
         """
-        self.code = self.platform.compile(
+        kwargs = dict(
             dex_output=path.join(self.out_dir, 'classes.dex'),
             manifest=self.manifest,
             source_dir=self.source_dir,
             resource_dir=self.resource_dir,
             source_gen_dir=self.gen_dir,
-            class_gen_dir=path.join(self.out_dir, 'classes')
+            class_gen_dir=path.join(self.out_dir, 'classes'),
+            extra_jars=only_existing([self.lib_dir])
         )
+        self.code = self.platform.compile(**kwargs)
 
     def build(self, output=None, config=None):
         """Shortcut to build everything into a final APK in one step.
@@ -394,7 +419,9 @@ class AndroidProject(object):
         # Put everything into an APK.
         apk = self.platform.build_apk(
             path.join(self.out_dir, '%s.apk' % self.name),
-            code=self.code, resources=resources)
+            code=self.code, resources=resources,
+            jar_paths=only_existing([self.lib_dir]),
+            native_dirs=only_existing([self.lib_dir]))
         return apk
 
     def clean(self):
