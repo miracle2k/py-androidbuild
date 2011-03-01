@@ -368,7 +368,7 @@ class AndroidProject(object):
         self.gen_dir = path.join(project_dir, 'gen')
         self.source_dir = path.join(project_dir, 'src')
         self.out_dir = path.join(project_dir, 'bin')
-        self.asset_dir = path.join(project_dir, 'asset')
+        self.asset_dir = path.join(project_dir, 'assets')
         self.lib_dir = path.join(project_dir, 'libs')
 
         if not name:
