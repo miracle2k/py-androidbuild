@@ -16,8 +16,9 @@ limitations under the License.
 
 import sys
 from os import path
+import logging
 
-from build import AndroidProject, ProgramFailedError
+from build import AndroidProject, ProgramFailedError, LOGGER_NAME
 
 
 def main(argv):
@@ -26,8 +27,14 @@ def main(argv):
           print "Builds the Android project in the current directory."
           print "Usage: %s PATH_TO_SDK" % scriptname
           return 1
-     p = AndroidProject('AndroidManifest.xml', sdk_dir=argv[0])
 
+     # Setup logging
+     log = logging.getLogger(LOGGER_NAME)
+     sh = logging.StreamHandler()
+     sh.setFormatter(logging.Formatter("> %(message)s"))
+     log.addHandler(sh)
+
+     p = AndroidProject('AndroidManifest.xml', sdk_dir=argv[0])
      try:
           apk = p.build()
 

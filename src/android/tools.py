@@ -64,6 +64,12 @@ class Program(object):
             self.__class__.__name__, repr(self.executable))
 
     def __call__(self, arguments):
+        """Note that this returns the command line that was executed,
+        so it can be logged.
+
+        Child implementations must not forget to pass this return value
+        along to their caller.
+        """
         cmdline = " ".join([self.executable] + arguments)
         process = subprocess.Popen([self.executable] + arguments,
                                    stderr=subprocess.PIPE,
@@ -74,6 +80,8 @@ class Program(object):
                 cmdline,
                 process.returncode, process.stderr.read(),
                 process.stdout.read())
+
+        return cmdline
 
 
 class Aapt(Program):
@@ -128,7 +136,7 @@ class Aapt(Program):
         self.extend_args(args, ['-F', apk_output])
         self.extend_args(args, ['-J', r_output])
         self.extend_args(args, ['-f'], overwrite)
-        Program.__call__(self, args)
+        return Program.__call__(self, args)
 
 
 class Aidl(Program):
@@ -155,7 +163,7 @@ class Aidl(Program):
         self.extend_args(args, ['-I%s' % search_path], search_path)
         self.extend_args(args, ['-o%s' % output_folder], output_folder)
         self.extend_args(args, [aidl_file])
-        Program.__call__(self, args)
+        return Program.__call__(self, args)
 
 
 class JavaC(Program):
@@ -195,7 +203,7 @@ class JavaC(Program):
         self.extend_args(args, ['-bootclasspath', bootclasspath])
         args.extend(['-g' if debug else '-g:none'])
         args.extend(files)
-        Program.__call__(self, args)
+        return Program.__call__(self, args)
 
 
 class Dx(Program):
@@ -215,7 +223,7 @@ class Dx(Program):
         args = ['--dex']
         self.extend_args(args, ["--output=%s" % output])
         args.extend(files)
-        Program.__call__(self, args)
+        return Program.__call__(self, args)
 
 
 class ApkBuilder(Program):
@@ -258,7 +266,7 @@ class ApkBuilder(Program):
             args.extend(['-rj', item])
         for item in native_dirs:
             args.extend(['-nf', item])
-        Program.__call__(self, args)
+        return Program.__call__(self, args)
 
 
 class JarSigner(Program):
@@ -271,7 +279,7 @@ class JarSigner(Program):
         args.extend(['-storepass', password])
         args.extend([jarfile])
         args.extend([alias])
-        Program.__call__(self, args)
+        return Program.__call__(self, args)
 
 
 class ZipAlign(Program):
@@ -284,4 +292,4 @@ class ZipAlign(Program):
         args.extend(["%s" % align])
         args.extend([infile])
         args.extend([outfile])
-        Program.__call__(self, args)
+        return Program.__call__(self, args)

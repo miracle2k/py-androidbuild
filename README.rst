@@ -100,6 +100,25 @@ APIs used during a build::
     platform.align(...)
 
 
+Enabling logging
+----------------
+
+To see what the build is doing, configure the library logger::
+
+    logging.getLogger('py-androidbuild').addHandler(logging.streamHandler())
+
+If something goes wrong, an ``ProgramFailedError`` is raised which holds
+all the relevant information::
+
+    try:
+        project.build()
+    except ProgramFailedError, e:
+        print e.cmdline
+        print e.returncode
+        print e.stderr
+        print e.stdout
+
+
 Stand-alone script
 -----------------
 

@@ -20,12 +20,23 @@ import fnmatch
 from os import path
 import shutil
 import tempfile
+import logging
 
 from tools import *
 
 
 __all__ = ('AndroidProject', 'PlatformTarget', 'get_platform',
            'ProgramFailedError')
+
+
+# Setup a logger for this library.
+LOGGER_NAME = 'py-androidbuild'
+log = logging.getLogger(LOGGER_NAME)
+log.setLevel(logging.INFO)
+class NullHandler(logging.Handler):
+    def emit(self, record):
+        pass
+log.addHandler(NullHandler())
 
 
 class File(object):
@@ -124,13 +135,13 @@ class PlatformTarget(object):
                 -I android.jar
         """
         mkdir(output_dir)
-        self.aapt(
+        log.info(self.aapt(
             command='package',
             make_dirs=True,
             manifest=manifest,
             resource_dir=resource_dir,
             r_output=output_dir,
-            include=[self.framework_library],)
+            include=[self.framework_library]))
 
     def compile_aidl(self, source_dir, output_dir):
         """Compile .aidl definitions found in ``source_dir`` into
@@ -141,12 +152,12 @@ class PlatformTarget(object):
             $ aidl -pframework.aidl -Isrc/ -ogen/ Foo.aidl
         """
         for filename in recursive_glob(source_dir, '*.aidl'):
-            self.aidl(
+            log.info(self.aidl(
                 filename,
                 preprocessed=self.framework_aidl,
                 search_path=source_dir,
                 output_folder=output_dir,
-            )
+            ))
 
     def _collect_jars(self, paths):
         jar_files = []
@@ -173,13 +184,13 @@ class PlatformTarget(object):
         jar_files = self._collect_jars(extra_jars)
         # TODO: check if files are up-to-date?
         mkdir(output_dir, True)
-        self.javac(
+        log.info(self.javac(
             source_files,
             target=target,
             debug=debug,
             destdir=output_dir,
             classpath=jar_files,
-            bootclasspath=self.framework_library)
+            bootclasspath=self.framework_library))
 
     def dex(self, source_dir, output=None, extra_jars=[]):
         """Dexing is the process of converting Java bytecode to Dalvik
@@ -196,7 +207,7 @@ class PlatformTarget(object):
             _, output = tempfile.mkstemp(suffix='.dex')
         output = path.abspath(output)
         jar_files = self._collect_jars(extra_jars)
-        self.dx([source_dir] + jar_files, output=output)
+        log.info(self.dx([source_dir] + jar_files, output=output))
         return CodeObj(output)
 
     def compile(self, manifest, source_dir, resource_dir,
@@ -225,6 +236,7 @@ class PlatformTarget(object):
                             extra_jars=extra_jars)
         finally:
             for d in to_delete:
+                log.info('Deleting tree: %s' % d)
                 shutil.rmtree(d)
 
     def pack_resources(self, manifest, resource_dir, asset_dir=None,
@@ -258,7 +270,7 @@ class PlatformTarget(object):
             overwrite=True)
         if asset_dir:
             kwargs['asset_dir'] = asset_dir
-        self.aapt(**kwargs)
+        log.info(self.aapt(**kwargs))
         return ResourceObj(output)
 
     def build_apk(self, output, code=None, resources=None,
@@ -274,15 +286,15 @@ class PlatformTarget(object):
         if resources:
             kwargs['zips'] = [resources.filename \
                   if isinstance(resources, ResourceObj) else resources]
-        self.apkbuilder(**kwargs)
+        log.info(self.apkbuilder(**kwargs))
         return Apk(self, output)
 
     def sign(self, apk, keystore, alias, password):
         """Sign an APK file.
         """
-        self.jarsigner(
+        log.info(self.jarsigner(
             apk.filename if isinstance(apk, Apk) else apk,
-            keystore=keystore, alias=alias, password=password)
+            keystore=keystore, alias=alias, password=password))
 
     def align(self, apk, output=None):
         """Align an APK file.
@@ -294,10 +306,11 @@ class PlatformTarget(object):
             # Or should tempfile be used? Might be on another
             # filesystem though.
             outfile = "%s.align.%s" % (infile, time.time())
-        self.zipalign(infile, outfile, align=4, force=True)
+        log.info(self.zipalign(infile, outfile, align=4, force=True))
 
         if not output:
             # In-place align was requested, return the original file
+            log.info('Renaming %s to %s' % (outfile, infile))
             os.rename(outfile, infile)
             return apk
         else:
