@@ -16,6 +16,12 @@ here in detail:
     http://developer.android.com/guide/developing/building/index.html#detailed-build
 
 
+Installation
+~~~~~~~~~~~~
+
+    $ easy_install py-androidbuild
+
+
 Usage
 ~~~~~
 
