@@ -143,15 +143,15 @@ class PlatformTarget(object):
             r_output=output_dir,
             include=[self.framework_library]))
 
-    def compile_aidl(self, source_dir, output_dir):
-        """Compile .aidl definitions found in ``source_dir`` into
+    def compile_aidl(self, source_dirs, output_dir):
+        """Compile .aidl definitions found in ``source_dirs`` into
         Java files, and put them into ``output_dir``.
 
-        Final call will look something like this::
+        Final calls will look something like this::
 
             $ aidl -pframework.aidl -Isrc/ -ogen/ Foo.aidl
         """
-        for filename in recursive_glob(source_dir, '*.aidl'):
+        for filename in recursive_glob(source_dirs, '*.aidl'):
             log.info(self.aidl(
                 filename,
                 preprocessed=self.framework_aidl,
@@ -178,9 +178,7 @@ class PlatformTarget(object):
         recursively be searched for .jar files.
         """
         # Collect all files to be compiled
-        source_files = []
-        for directory in source_dirs:
-            source_files += recursive_glob(directory, '*.java')
+        source_files = recursive_glob(source_dirs, '*.java')
         jar_files = self._collect_jars(extra_jars)
         # TODO: check if files are up-to-date?
         mkdir(output_dir, True)
@@ -210,7 +208,7 @@ class PlatformTarget(object):
         log.info(self.dx([source_dir] + jar_files, output=output))
         return CodeObj(output)
 
-    def compile(self, manifest, source_dir, resource_dir,
+    def compile(self, manifest, source_dirs, resource_dir,
                 source_gen_dir=None, class_gen_dir=None,
                 dex_output=None, extra_jars=[], **kwargs):
         """Shortcut for the whole process until dexing into a code
@@ -227,9 +225,10 @@ class PlatformTarget(object):
             class_gen_dir = tempfile.mkdtemp()
             to_delete.append(class_gen_dir)
         try:
+            source_dirs = as_list(source_dirs)
             self.generate_r(manifest, resource_dir, source_gen_dir)
-            self.compile_aidl(source_dir, source_gen_dir)
-            self.compile_java([source_dir, source_gen_dir],
+            self.compile_aidl(source_dirs, source_gen_dir)
+            self.compile_java(source_dirs+ [source_gen_dir],
                               class_gen_dir, extra_jars=extra_jars,
                               **kwargs)
             return self.dex(class_gen_dir, output=dex_output,
@@ -344,11 +343,15 @@ def get_platform(sdk_path, target=None):
 
 
 def recursive_glob(treeroot, pattern):
-    """From: http://stackoverflow.com/questions/2186525/2186639#2186639"""
+    """From: http://stackoverflow.com/questions/2186525/2186639#2186639
+
+    ``treeroot`` can be a list of multiple directory should be searched.
+    """
     results = []
-    for base, dirs, files in os.walk(treeroot):
-        goodfiles = fnmatch.filter(files, pattern)
-        results.extend(os.path.join(base, f) for f in goodfiles)
+    for root in as_list(treeroot):
+        for base, dirs, files in os.walk(root):
+            goodfiles = fnmatch.filter(files, pattern)
+            results.extend(os.path.join(base, f) for f in goodfiles)
     return results
 
 
@@ -363,6 +366,15 @@ def mkdir(directory, recursive=False):
 def only_existing(paths):
     """Return only those paths that actually exists."""
     return filter(lambda p: path.exists(p), paths)
+
+
+def as_list(o):
+    """Returns `o` as the only element in a list if it isn't already a list
+    or tuple.
+    """
+    if not isinstance(o, (list, tuple)):
+        return [o]
+    return o
 
 
 class AndroidProject(object):
@@ -393,6 +405,9 @@ class AndroidProject(object):
         self.asset_dir = path.join(project_dir, 'assets')
         self.lib_dir = path.join(project_dir, 'libs')
 
+        # Optional values
+        self.extra_source_dirs = []
+
         if not name:
             # if no name is given, inspect the manifest
             from xml.etree import ElementTree
@@ -406,7 +421,7 @@ class AndroidProject(object):
         kwargs = dict(
             dex_output=path.join(self.out_dir, 'classes.dex'),
             manifest=self.manifest,
-            source_dir=self.source_dir,
+            source_dirs=[self.source_dir] + self.extra_source_dirs,
             resource_dir=self.resource_dir,
             source_gen_dir=self.gen_dir,
             class_gen_dir=path.join(self.out_dir, 'classes'),
