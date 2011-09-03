@@ -322,6 +322,10 @@ def get_platform(sdk_path, target=None):
 
     If no target is given, the most recent target is chosen.
     """
+    #check ig sdk folder contains platforms folder
+    if path.exists(path.join(sdk_path, 'platforms')) == False:
+        raise ValueError("sdk path is wrong")
+    
     platforms = filter(lambda p: path.isdir(p),
                        map(lambda e: path.join(sdk_path, 'platforms', e),
                            os.listdir(path.join(sdk_path, 'platforms'))))
