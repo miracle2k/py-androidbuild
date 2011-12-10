@@ -387,14 +387,6 @@ class AndroidProject(object):
 
     def __init__(self, manifest, name=None, platform=None, sdk_dir=None,
                  target=None):
-        if not platform:
-            if not sdk_dir:
-                raise ValueError('You need to provide the SDK path, '
-                                 'or a PlatformTarget instancen.')
-            platform = get_platform(sdk_dir, target)
-
-        self.platform = platform
-
         # Project-specific paths
         self.manifest = path.abspath(manifest)
         project_dir = path.dirname(self.manifest)
@@ -405,15 +397,30 @@ class AndroidProject(object):
         self.asset_dir = path.join(project_dir, 'assets')
         self.lib_dir = path.join(project_dir, 'libs')
 
+        # Retrieve platform
+        if not platform:
+            if not sdk_dir:
+                raise ValueError('You need to provide the SDK path, '
+                                 'or a PlatformTarget instance.')
+            if target is None:
+                target = self.manifest_parsed.find('uses-sdk')\
+                    .attrib['{http://schemas.android.com/apk/res/android}targetSdkVersion']
+            platform = get_platform(sdk_dir, target)
+
+        self.platform = platform
+
         # Optional values
         self.extra_source_dirs = []
 
-        if not name:
-            # if no name is given, inspect the manifest
+        # if no name is given, inspect the manifest
+        self.name = name or self.manifest_parsed.attrib['package']
+
+    @property
+    def manifest_parsed(self):
+        if not hasattr(self, '_parsed_manifest'):
             from xml.etree import ElementTree
-            tree = ElementTree.parse(self.manifest)
-            name = tree.getroot().attrib['package']
-        self.name = name
+            self._parsed_manifest = ElementTree.parse(self.manifest)
+        return self._parsed_manifest.getroot()
 
     def compile(self):
         """Force a recompile of the project.
