@@ -100,6 +100,11 @@ APIs used during a build::
     platform.align(...)
 
 
+Here is a build script that I use in production:
+
+    https://github.com/miracle2k/android-autostarts/blob/master/fabfile.py
+
+
 Enabling logging
 ----------------
 
