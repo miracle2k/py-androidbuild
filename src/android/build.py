@@ -384,8 +384,8 @@ class AndroidProject(object):
     ``PlatformTarget`` directly, by making some default assumptions
     as to directory layout and file locations.
 
-    Specifically, given the location of the project's
-    AndroidManifest.xml file, it will:
+    Specifically, given the location of the project base directory
+    it will:
 
         - assume sources under ./src
         - assume resources under ./res
@@ -393,6 +393,13 @@ class AndroidProject(object):
         - use ./gen for generated code, like R.java
         - use ./out for final files
         - include .jar files under ./lib
+
+    If you don't specify a project directory explicitly, the location
+    of your ``AndroidManifest.xml`` file is used. The ability to
+    specify a project directory manually becomes helpful when you
+    want to rewrite your manifest file before the build, in particular
+    because Android's ``aapt`` currently (SDK 4.0) does not support 
+    manifest files that are not named ``AndroidManifest.xml``.
 
     Additionally, this class considers the following instance
     attributes:
@@ -415,10 +422,11 @@ class AndroidProject(object):
     """
 
     def __init__(self, manifest, name=None, platform=None, sdk_dir=None,
-                 target=None):
+                 target=None, project_dir=None):
         # Project-specific paths
         self.manifest = path.abspath(manifest)
-        project_dir = path.dirname(self.manifest)
+        if not project_dir:
+            project_dir = path.dirname(self.manifest)
         self.resource_dir = path.join(project_dir, 'res')
         self.gen_dir = path.join(project_dir, 'gen')
         self.source_dir = path.join(project_dir, 'src')
