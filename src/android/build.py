@@ -411,6 +411,7 @@ class AndroidProject(object):
 
         # Optional values
         self.extra_source_dirs = []
+        self.extra_jars = []
 
         # if no name is given, inspect the manifest
         self.name = name or self.manifest_parsed.attrib['package']
@@ -432,7 +433,7 @@ class AndroidProject(object):
             resource_dir=self.resource_dir,
             source_gen_dir=self.gen_dir,
             class_gen_dir=path.join(self.out_dir, 'classes'),
-            extra_jars=only_existing([self.lib_dir])
+            extra_jars=only_existing([self.lib_dir])+self.extra_jars
         )
         self.code = self.platform.compile(**kwargs)
 
@@ -474,7 +475,7 @@ class AndroidProject(object):
         apk = self.platform.build_apk(
             output,
             code=self.code, resources=resources,
-            jar_paths=only_existing([self.lib_dir]),
+            jar_paths=only_existing([self.lib_dir])+self.extra_jars,
             native_dirs=only_existing([self.lib_dir]),
             source_dirs=only_existing([self.source_dir]))
         return apk
