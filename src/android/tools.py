@@ -53,7 +53,7 @@ class Program(object):
     def extend_args(self, args, new, condition=True):
         """Helper which will extend the argument list ``args``
         with the list ``new``, but only if ``new`` contains
-        no ``None`` items, and only if a specifiied ``condition``
+        no ``None`` items, and only if a specified ``condition``
         is ``True``.
         """
         if not None in new and condition:
@@ -126,8 +126,9 @@ class Aapt(Program):
         self.extend_args(args, ['-S', resource_dir])
         self.extend_args(args, ['-A', asset_dir])
         self.extend_args(args, ['-c', configurations])
-        self.extend_args(
-            args, ['--version-code', "%s" % overwrite_version_code])
+        if overwrite_version_code:
+            self.extend_args(
+                args, ['--version-code', "%s" % overwrite_version_code])
         self.extend_args(args, ['--version-code', overwrite_version_name])
         self.extend_args(
             args, ['--rename-manifest-package', rename_manifest_package])
