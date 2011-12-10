@@ -65,7 +65,7 @@ Or::
 
 
 If you need to build multiple versions of your app, you need to use
-different package names:
+different package names::
 
     ...
     project.build(package_name='com.foo.app.donate', version_code=5)
