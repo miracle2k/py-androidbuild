@@ -383,6 +383,35 @@ class AndroidProject(object):
     This provides a more high-level approach than working with
     ``PlatformTarget`` directly, by making some default assumptions
     as to directory layout and file locations.
+
+    Specifically, given the location of the project's
+    AndroidManifest.xml file, it will:
+
+        - assume sources under ./src
+        - assume resources under ./res
+        - assume raw assets under ./assets
+        - use ./gen for generated code, like R.java
+        - use ./out for final files
+        - include .jar files under ./lib
+
+    Additionally, this class considers the following instance
+    attributes:
+
+        ``extra_source_dirs``
+             Specify additional source code directories as a list.
+
+        ``extra_jars``
+             Specify additional jar files, that you do not want to
+             place within ./lib. You'll use this to reference things
+             like the Android Compatibility Support Libraries.
+
+    When constructing a ``AndroidProject`` instance, zou either need to
+    pass a platform that you have aquired yourself using ``get_platform``,
+    or you need to give the path to the Android SDK in ``sdk_dir``.
+    Additionally, you may specify an Android API level to build against
+    via ``target``. If not given, the ``android:targetSdkVersion`` attribute
+    from your manifest will be automatically used. If no such attribute
+    exists, the most recent API level in your SDK will be used.
     """
 
     def __init__(self, manifest, name=None, platform=None, sdk_dir=None,
