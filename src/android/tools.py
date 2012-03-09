@@ -18,7 +18,7 @@ import subprocess
 
 
 __all__ = ('ProgramFailedError', 'Aapt', 'Aidl', 'ApkBuilder',
-           'Dx', 'JarSigner', 'JavaC', 'ZipAlign',)
+           'Dx', 'JarSigner', 'NdkBuild', 'JavaC', 'ZipAlign')
 
 
 class ProgramFailedError(RuntimeError):
@@ -73,7 +73,7 @@ class Program(object):
         cmdline = " ".join([self.executable] + arguments)
         process = subprocess.Popen([self.executable] + arguments,
                                    stderr=subprocess.PIPE,
-                                   stdout=subprocess.PIPE)
+                                   stdout=subprocess.PIPE if isinstance(self, NdkBuild) is False else None)
         process.wait()
         if process.returncode != 0:
             raise ProgramFailedError(
@@ -164,7 +164,19 @@ class Aidl(Program):
         self.extend_args(args, ['-o%s' % output_folder], output_folder)
         self.extend_args(args, [aidl_file])
         return Program.__call__(self, args)
-
+    
+class NdkBuild(Program):
+    """Interface to the command line c/c++ compiler, ``ndk-build``
+    """
+    
+    def __call__(self, project_path):
+        """
+        project_path
+            Location of the project
+        """
+        args = []
+        self.extend_args(args, ["-C", project_path])
+        return Program.__call__(self, args)
 
 class JavaC(Program):
     """Interface to the Java command line compiler, ``javac``.
