@@ -65,7 +65,7 @@ Or::
 
 
 If you need to build multiple versions of your app, you need to use
-different package names:
+different package names::
 
     ...
     project.build(package_name='com.foo.app.donate', version_code=5)
@@ -98,6 +98,11 @@ APIs used during a build::
     platform.build_apk(...)
     platform.sign(...)
     platform.align(...)
+
+
+Here is a build script that I use in production:
+
+    https://github.com/miracle2k/android-autostarts/blob/master/fabfile.py
 
 
 Enabling logging

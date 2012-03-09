@@ -402,14 +402,50 @@ class AndroidProject(object):
     This provides a more high-level approach than working with
     ``PlatformTarget`` directly, by making some default assumptions
     as to directory layout and file locations.
+
+    Specifically, given the location of the project base directory
+    it will:
+
+        - assume sources under ./src
+        - assume resources under ./res
+        - assume raw assets under ./assets
+        - use ./gen for generated code, like R.java
+        - use ./out for final files
+        - include .jar files under ./lib
+
+    If you don't specify a project directory explicitly, the location
+    of your ``AndroidManifest.xml`` file is used. The ability to
+    specify a project directory manually becomes helpful when you
+    want to rewrite your manifest file before the build, in particular
+    because Android's ``aapt`` currently (SDK 4.0) does not support 
+    manifest files that are not named ``AndroidManifest.xml``.
+
+    Additionally, this class considers the following instance
+    attributes:
+
+        ``extra_source_dirs``
+             Specify additional source code directories as a list.
+
+        ``extra_jars``
+             Specify additional jar files, that you do not want to
+             place within ./lib. You'll use this to reference things
+             like the Android Compatibility Support Libraries.
+
+    When constructing a ``AndroidProject`` instance, zou either need to
+    pass a platform that you have aquired yourself using ``get_platform``,
+    or you need to give the path to the Android SDK in ``sdk_dir``.
+    Additionally, you may specify an Android API level to build against
+    via ``target``. If not given, the ``android:targetSdkVersion`` attribute
+    from your manifest will be automatically used. If no such attribute
+    exists, the most recent API level in your SDK will be used.
     """
 
     def __init__(self, manifest, name=None, platform=None, sdk_dir=None,
-                 ndk_dir=None, target=None):
+                 ndk_dir=None, target=None, project_dir=None):
         if not platform:
             if not sdk_dir:
                 raise ValueError('You need to provide the SDK path, '
-                                 'or a PlatformTarget instancen.')
+                                 'or a PlatformTarget instance.')
             platform = get_platform(sdk_dir, ndk_dir, target)
             
         self.platform = platform
@@ -427,15 +463,31 @@ class AndroidProject(object):
         self.lib_dir = path.join(self.project_dir, 'libs')
         self.obj_dir = path.join(self.project_dir, 'obj/local')
 
+        # Retrieve platform
+        if not platform:
+            if not sdk_dir:
+                raise ValueError('You need to provide the SDK path, '
+                                 'or a PlatformTarget instance.')
+            if target is None:
+                target = self.manifest_parsed.find('uses-sdk')\
+                    .attrib['{http://schemas.android.com/apk/res/android}targetSdkVersion']
+            platform = get_platform(sdk_dir, target)
+
+        self.platform = platform
+
         # Optional values
         self.extra_source_dirs = []
+        self.extra_jars = []
 
-        if not name:
-            # if no name is given, inspect the manifest
+        # if no name is given, inspect the manifest
+        self.name = name or self.manifest_parsed.attrib['package']
+
+    @property
+    def manifest_parsed(self):
+        if not hasattr(self, '_parsed_manifest'):
             from xml.etree import ElementTree
-            tree = ElementTree.parse(self.manifest)
-            name = tree.getroot().attrib['package']
-        self.name = name
+            self._parsed_manifest = ElementTree.parse(self.manifest)
+        return self._parsed_manifest.getroot()
 
     def compile(self):
         """Force a recompile of the project.
@@ -448,7 +500,7 @@ class AndroidProject(object):
             resource_dir=self.resource_dir,
             source_gen_dir=self.gen_dir,
             class_gen_dir=path.join(self.out_dir, 'classes'),
-            extra_jars=only_existing([self.lib_dir])
+            extra_jars=only_existing([self.lib_dir])+self.extra_jars
         )
         self.code = self.platform.compile(**kwargs)
 
@@ -490,7 +542,7 @@ class AndroidProject(object):
         apk = self.platform.build_apk(
             output,
             code=self.code, resources=resources,
-            jar_paths=only_existing([self.lib_dir]),
+            jar_paths=only_existing([self.lib_dir])+self.extra_jars,
             native_dirs=only_existing([self.lib_dir]),
             source_dirs=only_existing([self.source_dir]))
         return apk
