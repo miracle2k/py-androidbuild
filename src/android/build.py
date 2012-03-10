@@ -87,7 +87,7 @@ class PlatformTarget(object):
     are partly different in each version.
     """
 
-    def __init__(self, version, sdk_dir, platform_dir, custom_paths={}):
+    def __init__(self, version, sdk_dir, ndk_dir, platform_dir, custom_paths={}):
         self.version = version
         self.sdk_dir = sdk_dir
         self.platform_dir = platform_dir
@@ -109,6 +109,10 @@ class PlatformTarget(object):
             jarsigner = 'jarsigner',
             javac = 'javac',
         )
+        
+        if ndk_dir is not None:
+            paths['ndk_build'] = path.join(ndk_dir, 'ndk-build.bat' if sys.platform=="win32" else 'ndk-build')
+        
         paths.update(custom_paths)
 
         self.dx = Dx(paths['dx'])
@@ -117,6 +121,10 @@ class PlatformTarget(object):
         self.zipalign = ZipAlign(paths['zipalign'])
         self.apkbuilder = ApkBuilder(paths['apkbuilder'])
         self.javac = JavaC(paths['javac'])
+        if ndk_dir is not None:
+            self.ndk_build = NdkBuild(paths['ndk_build'])
+        else:
+            self.ndk_build = None
         self.jarsigner = JarSigner(paths['jarsigner'])
 
         self.framework_library = path.join(platform_dir, 'android.jar')
@@ -189,6 +197,11 @@ class PlatformTarget(object):
             destdir=output_dir,
             classpath=jar_files,
             bootclasspath=self.framework_library))
+        
+    def compile_native(self, project_dir):
+        """Shortcut for building native code
+        """
+        self.ndk_build(project_dir)
 
     def dex(self, source_dir, output=None, extra_jars=[]):
         """Dexing is the process of converting Java bytecode to Dalvik
@@ -208,7 +221,7 @@ class PlatformTarget(object):
         log.info(self.dx([source_dir] + jar_files, output=output))
         return CodeObj(output)
 
-    def compile(self, manifest, source_dirs, resource_dir,
+    def compile(self, manifest, project_dir, source_dirs, resource_dir,
                 source_gen_dir=None, class_gen_dir=None,
                 dex_output=None, extra_jars=[], **kwargs):
         """Shortcut for the whole process until dexing into a code
@@ -228,6 +241,8 @@ class PlatformTarget(object):
             source_dirs = as_list(source_dirs)
             self.generate_r(manifest, resource_dir, source_gen_dir)
             self.compile_aidl(source_dirs, source_gen_dir)
+            if self.ndk_build is not None:
+                self.compile_native(project_dir)
             self.compile_java(source_dirs+ [source_gen_dir],
                               class_gen_dir, extra_jars=extra_jars,
                               **kwargs)
@@ -317,11 +332,15 @@ class PlatformTarget(object):
             return Apk(self, outfile)
 
 
-def get_platform(sdk_path, target=None):
+def get_platform(sdk_path, ndk_dir, target=None):
     """Return path and filename information for the given SDK target.
 
     If no target is given, the most recent target is chosen.
     """
+    #check ig sdk folder contains platforms folder
+    if path.exists(path.join(sdk_path, 'platforms')) == False:
+        raise ValueError("sdk path is wrong")
+    
     platforms = filter(lambda p: path.isdir(p),
                        map(lambda e: path.join(sdk_path, 'platforms', e),
                            os.listdir(path.join(sdk_path, 'platforms'))))
@@ -339,7 +358,7 @@ def get_platform(sdk_path, target=None):
         raise ValueError('target "%s" not found in "%s"' % (
             target, sdk_path))
 
-    return PlatformTarget(target, sdk_path, target_root)
+    return PlatformTarget(target, sdk_path, ndk_dir, target_root)
 
 
 def recursive_glob(treeroot, pattern):
@@ -422,17 +441,27 @@ class AndroidProject(object):
     """
 
     def __init__(self, manifest, name=None, platform=None, sdk_dir=None,
-                 target=None, project_dir=None):
+                 ndk_dir=None, target=None, project_dir=None):
+        if not platform:
+            if not sdk_dir:
+                raise ValueError('You need to provide the SDK path, '
+                                 'or a PlatformTarget instance.')
+            platform = get_platform(sdk_dir, ndk_dir, target)
+            
+        self.platform = platform
+
+        self.ndk_dir = ndk_dir
+
         # Project-specific paths
         self.manifest = path.abspath(manifest)
-        if not project_dir:
-            project_dir = path.dirname(self.manifest)
-        self.resource_dir = path.join(project_dir, 'res')
-        self.gen_dir = path.join(project_dir, 'gen')
-        self.source_dir = path.join(project_dir, 'src')
-        self.out_dir = path.join(project_dir, 'bin')
-        self.asset_dir = path.join(project_dir, 'assets')
-        self.lib_dir = path.join(project_dir, 'libs')
+        self.project_dir = path.dirname(self.manifest)
+        self.resource_dir = path.join(self.project_dir, 'res')
+        self.gen_dir = path.join(self.project_dir, 'gen')
+        self.source_dir = path.join(self.project_dir, 'src')
+        self.out_dir = path.join(self.project_dir, 'bin')
+        self.asset_dir = path.join(self.project_dir, 'assets')
+        self.lib_dir = path.join(self.project_dir, 'libs')
+        self.obj_dir = path.join(self.project_dir, 'obj/local')
 
         # Retrieve platform
         if not platform:
@@ -466,6 +495,7 @@ class AndroidProject(object):
         kwargs = dict(
             dex_output=path.join(self.out_dir, 'classes.dex'),
             manifest=self.manifest,
+            project_dir = self.project_dir,
             source_dirs=[self.source_dir] + self.extra_source_dirs,
             resource_dir=self.resource_dir,
             source_gen_dir=self.gen_dir,
@@ -519,8 +549,18 @@ class AndroidProject(object):
 
     def clean(self):
         """Deletes both ``self.out_dir`` and ``self.gen_dir``.
+        Deletes also libs and obj contents (ndk)
         """
         if path.exists(self.out_dir):
             shutil.rmtree(self.out_dir)
         if path.exists(self.out_dir):
             shutil.rmtree(self.gen_dir)
+        if path.exists(self.lib_dir):
+            libs_dirlist = os.listdir(self.lib_dir)
+            for arch in libs_dirlist:
+                shutil.rmtree(os.path.join(self.lib_dir, arch))
+        if path.exists(self.obj_dir):
+            objs_dirlist = os.listdir(self.obj_dir)
+            for arch in objs_dirlist:
+                shutil.rmtree(os.path.join(self.obj_dir, arch))
+            
