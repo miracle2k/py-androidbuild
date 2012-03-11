@@ -201,6 +201,9 @@ class PlatformTarget(object):
     def compile_native(self, project_dir):
         """Shortcut for building native code
         """
+        log.info(self.ndk_build(
+            project_dir,
+        ))
         self.ndk_build(project_dir)
 
     def dex(self, source_dir, output=None, extra_jars=[]):

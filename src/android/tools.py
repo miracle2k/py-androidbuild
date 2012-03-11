@@ -73,7 +73,7 @@ class Program(object):
         cmdline = " ".join([self.executable] + arguments)
         process = subprocess.Popen([self.executable] + arguments,
                                    stderr=subprocess.PIPE,
-                                   stdout=subprocess.PIPE if isinstance(self, NdkBuild) is False else None)
+                                   stdout=subprocess.PIPE)
         process.wait()
         if process.returncode != 0:
             raise ProgramFailedError(
