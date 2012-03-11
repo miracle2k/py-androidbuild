@@ -566,7 +566,7 @@ class AndroidProject(object):
         """
         if path.exists(self.out_dir):
             shutil.rmtree(self.out_dir)
-        if path.exists(self.out_dir):
+        if path.exists(self.gen_dir):
             shutil.rmtree(self.gen_dir)
         if self.platform.ndk_clean:
             self.platform.clean_native(self.project_dir)
