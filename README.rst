@@ -39,6 +39,17 @@ The ``AndroidProject`` class assumes a default Android directory layout,
 that is it espects to find things like a ``./res`` and a ``./src``
 directory next to the ``AndroidManifest.xml``.
 
+If your project contains native code::
+
+	from android.build import AndroidProject
+	
+	project = AndroidProject('AndroidManifest.xml', sdk_dir='/opt/android', ndk_dir="/opt/android-ndk")
+	apk = project.build()
+	apk.sign('keystore', 'alias', 'name')
+	apk.align()
+
+When you set ndk_dir in ``AndroidProject``, it will automatically setup the project for native build
+
 
 Or::
 
