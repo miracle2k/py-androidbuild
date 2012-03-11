@@ -165,7 +165,7 @@ class PlatformTarget(object):
             log.info(self.aidl(
                 filename,
                 preprocessed=self.framework_aidl,
-                search_path=source_dir,
+                search_path=source_dirs,
                 output_folder=output_dir,
             ))
 
