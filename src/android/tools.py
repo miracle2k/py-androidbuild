@@ -18,7 +18,7 @@ import subprocess
 
 
 __all__ = ('ProgramFailedError', 'Aapt', 'Aidl', 'ApkBuilder',
-           'Dx', 'JarSigner', 'NdkBuild', 'JavaC', 'ZipAlign')
+           'Dx', 'JarSigner', 'NdkBuild', 'NdkClean', 'JavaC', 'ZipAlign')
 
 
 class ProgramFailedError(RuntimeError):
@@ -73,7 +73,7 @@ class Program(object):
         cmdline = " ".join([self.executable] + arguments)
         process = subprocess.Popen([self.executable] + arguments,
                                    stderr=subprocess.PIPE,
-                                   stdout=subprocess.PIPE if isinstance(self, NdkBuild) is False else None)
+                                   stdout=subprocess.PIPE)
         process.wait()
         if process.returncode != 0:
             raise ProgramFailedError(
@@ -176,6 +176,16 @@ class NdkBuild(Program):
             Location of the project
         """
         args = []
+        self.extend_args(args, ["-C", project_path])
+        return Program.__call__(self, args)
+
+class NdkClean(Program):
+    """Interface to the command linec/c++ cleaner, ``ndk-build clean``
+    """
+
+    def __call__(self, project_path):
+        args = []
+        self.extend_args(args, ["clean"])
         self.extend_args(args, ["-C", project_path])
         return Program.__call__(self, args)
 

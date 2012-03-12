@@ -123,8 +123,10 @@ class PlatformTarget(object):
         self.javac = JavaC(paths['javac'])
         if ndk_dir is not None:
             self.ndk_build = NdkBuild(paths['ndk_build'])
+            self.ndk_clean = NdkClean(paths['ndk_build'])
         else:
             self.ndk_build = None
+            self.ndk_clean = None
         self.jarsigner = JarSigner(paths['jarsigner'])
 
         self.framework_library = path.join(platform_dir, 'android.jar')
@@ -201,7 +203,18 @@ class PlatformTarget(object):
     def compile_native(self, project_dir):
         """Shortcut for building native code
         """
+        log.info(self.ndk_build(
+            project_dir,
+        ))
         self.ndk_build(project_dir)
+
+    def clean_native(self, project_dir):
+        """Shortcut for cleaning native code
+        """
+        log.info(self.ndk_clean(
+            project_dir,
+        ))
+        self.ndk_clean(project_dir)
 
     def dex(self, source_dir, output=None, extra_jars=[]):
         """Dexing is the process of converting Java bytecode to Dalvik
@@ -555,12 +568,5 @@ class AndroidProject(object):
             shutil.rmtree(self.out_dir)
         if path.exists(self.out_dir):
             shutil.rmtree(self.gen_dir)
-        if path.exists(self.lib_dir):
-            libs_dirlist = os.listdir(self.lib_dir)
-            for arch in libs_dirlist:
-                shutil.rmtree(os.path.join(self.lib_dir, arch))
-        if path.exists(self.obj_dir):
-            objs_dirlist = os.listdir(self.obj_dir)
-            for arch in objs_dirlist:
-                shutil.rmtree(os.path.join(self.obj_dir, arch))
-            
+        if self.platform.ndk_clean:
+            self.platform.clean_native(self.project_dir)
