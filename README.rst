@@ -161,9 +161,6 @@ things should be easy to implement.
 - Renderscript in Honeycomb requires additional build steps that are
   not yet implemented.
 
-- Including native libraries is probably yet supported, but at the very
-  least untested.
-
 - ProGuard obfuscation is not implememented.
 
 - Some tests would sure be nice.
