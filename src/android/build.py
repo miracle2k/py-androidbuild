@@ -165,7 +165,7 @@ class PlatformTarget(object):
             log.info(self.aidl(
                 filename,
                 preprocessed=self.framework_aidl,
-                search_path=source_dir,
+                search_path=source_dirs,
                 output_folder=output_dir,
             ))
 
@@ -566,7 +566,7 @@ class AndroidProject(object):
         """
         if path.exists(self.out_dir):
             shutil.rmtree(self.out_dir)
-        if path.exists(self.out_dir):
+        if path.exists(self.gen_dir):
             shutil.rmtree(self.gen_dir)
         if self.platform.ndk_clean:
             self.platform.clean_native(self.project_dir)
