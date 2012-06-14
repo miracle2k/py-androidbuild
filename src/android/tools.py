@@ -300,6 +300,8 @@ class JarSigner(Program):
         args = []
         args.extend(['-keystore', keystore])
         args.extend(['-storepass', password])
+        args.extend(['-digestalg', 'SHA1'])
+        args.extend(['-sigalg', 'MD5withRSA'])
         args.extend([jarfile])
         args.extend([alias])
         return Program.__call__(self, args)
