@@ -8,7 +8,7 @@ This is not a standalone build tool, but a collection of routines with
 which you can build your Android project in Python, or a Python-based
 tool like fabric.
 
-Tested with Android SDK 2.3 (older versions might not work).
+Tested with Android SDK 4.0 (older versions might not work).
 
 Android's build process, that is, what this module implements, is outlined
 here in detail:
