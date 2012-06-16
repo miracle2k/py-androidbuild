@@ -47,6 +47,9 @@ If your project contains native code::
 	apk = project.build()
 	apk.sign('keystore', 'alias', 'name')
 	apk.align()
+	
+For render script you don't need to configure anything,
+it will auto detect renderscript files and run build
 
 When you set ndk_dir in ``AndroidProject``, it will automatically setup the project for native build
 
