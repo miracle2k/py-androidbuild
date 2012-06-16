@@ -168,8 +168,9 @@ class PlatformTarget(object):
         files_list = list()
         for filename in recursive_glob(source_dirs, '*.rs'):
             files_list.append(filename)
-        if self.llvmRs is None:
-            print 'none type for llvm rs'
+        #don't try to build renderscript if there is no rs files
+        if len(files_list) <= 0:
+            return
         log.info(self.llvmRs(
                     path.join(resource_dir, 'raw'),
                     source_gen_dir,
