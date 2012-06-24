@@ -179,7 +179,7 @@ things should be easy to implement.
   hasn't been tested and might well not be possible yet.
 
 - ProGuard obfuscation is not implememented.
-                                                                                              w
+
 - Some tests would sure be nice.
 
 Also, referencing "Library projects" doesn't work yet. This is what
