@@ -159,7 +159,7 @@ class PlatformTarget(object):
             r_output=output_dir,
             include=[self.framework_library]))
         
-    def generate_Rs(self, resource_dir, source_gen_dir, source_dirs):
+    def compile_renderscript(self, resource_dir, source_gen_dir, source_dirs):
         """
         compile renderscript files before aapt packaging
         build all rs files in source_dirs
@@ -277,7 +277,7 @@ class PlatformTarget(object):
             to_delete.append(class_gen_dir)
         try:
             source_dirs = as_list(source_dirs)
-            self.generate_Rs(resource_dir, source_gen_dir, source_dirs)
+            self.compile_renderscript(resource_dir, source_gen_dir, source_dirs)
             self.generate_r(manifest, resource_dir, source_gen_dir)
             # TODO: check args for RS
             self.compile_aidl(source_dirs, source_gen_dir)
