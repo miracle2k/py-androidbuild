@@ -17,7 +17,7 @@ limitations under the License.
 import subprocess
 
 
-__all__ = ('ProgramFailedError', 'Aapt', 'Aidl', 'ApkBuilder',
+__all__ = ('ProgramFailedError', 'Aapt', 'Aidl', 'LlvmRs', 'ApkBuilder',
            'Dx', 'JarSigner', 'NdkBuild', 'NdkClean', 'JavaC', 'ZipAlign')
 
 
@@ -166,6 +166,20 @@ class Aidl(Program):
         self.extend_args(args, [aidl_file])
         return Program.__call__(self, args)
     
+class LlvmRs(Program):
+    """Interface to the command line llvm renderscript compiler, ``llvm-rs-cc``
+    """
+    
+    def __call__(self, resource_dir, resource_gen_dir, source_files, include_dirs):
+        args = []
+        for include in include_dirs:
+            self.extend_args(args, ['-I', include])
+        self.extend_args(args, ['-o', resource_dir])
+        self.extend_args(args, ['-java-reflection-path-base', resource_gen_dir])
+        for filename in source_files:
+            self.extend_args(args, [filename])
+        return Program.__call__(self, args)
+
 class NdkBuild(Program):
     """Interface to the command line c/c++ compiler, ``ndk-build``
     """
@@ -300,6 +314,8 @@ class JarSigner(Program):
         args = []
         args.extend(['-keystore', keystore])
         args.extend(['-storepass', password])
+        args.extend(['-digestalg', 'SHA1'])
+        args.extend(['-sigalg', 'MD5withRSA'])
         args.extend([jarfile])
         args.extend([alias])
         return Program.__call__(self, args)

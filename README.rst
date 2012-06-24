@@ -39,6 +39,9 @@ The ``AndroidProject`` class assumes a default Android directory layout,
 that is it espects to find things like a ``./res`` and a ``./src``
 directory next to the ``AndroidManifest.xml``.
 
+For render script you don't need to configure anything,
+it will auto detect renderscript files and run build
+
 If your project contains native code::
 
 	from android.build import AndroidProject

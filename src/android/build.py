@@ -100,6 +100,8 @@ class PlatformTarget(object):
                 'aapt.exe' if sys.platform=='win32' else 'aapt'),
             aidl = path.join(sdk_dir, 'platform-tools',
                 'aidl.exe' if sys.platform=='win32' else 'aidl'),
+            llvmrs = path.join(sdk_dir, 'platform-tools',
+                'llvm-rs-cc.exe' if sys.platform=='win32' else 'llvm-rs-cc'),
             dx = path.join(sdk_dir, 'platform-tools',
                 'dx.bat' if sys.platform=='win32' else 'dx'),
             apkbuilder = path.join(sdk_dir, 'tools',
@@ -118,6 +120,7 @@ class PlatformTarget(object):
         self.dx = Dx(paths['dx'])
         self.aapt = Aapt(paths['aapt'])
         self.aidl = Aidl(paths['aidl'])
+        self.llvmRs = LlvmRs(paths['llvmrs'])
         self.zipalign = ZipAlign(paths['zipalign'])
         self.apkbuilder = ApkBuilder(paths['apkbuilder'])
         self.javac = JavaC(paths['javac'])
@@ -131,6 +134,9 @@ class PlatformTarget(object):
 
         self.framework_library = path.join(platform_dir, 'android.jar')
         self.framework_aidl = path.join(platform_dir, 'framework.aidl')
+        self.rs_includes = [
+            path.join(sdk_dir, 'platform-tools/renderscript/include'),
+            path.join(sdk_dir, 'platform-tools/renderscript/clang-include')]
 
     def __repr__(self):
         return 'Platform %s <%s>' % (self.version, self.platform_dir)
@@ -152,6 +158,25 @@ class PlatformTarget(object):
             resource_dir=resource_dir,
             r_output=output_dir,
             include=[self.framework_library]))
+        
+    def generate_Rs(self, resource_dir, source_gen_dir, source_dirs):
+        """
+        compile renderscript files before aapt packaging
+        build all rs files in source_dirs
+        put cc files in res/raw and java files in gen
+        """
+        files_list = list()
+        for filename in recursive_glob(source_dirs, '*.rs'):
+            files_list.append(filename)
+        #don't try to build renderscript if there is no rs files
+        if len(files_list) <= 0:
+            return
+        log.info(self.llvmRs(
+                    path.join(resource_dir, 'raw'),
+                    source_gen_dir,
+                    files_list,
+                    self.rs_includes
+                ))
 
     def compile_aidl(self, source_dirs, output_dir):
         """Compile .aidl definitions found in ``source_dirs`` into
@@ -252,7 +277,9 @@ class PlatformTarget(object):
             to_delete.append(class_gen_dir)
         try:
             source_dirs = as_list(source_dirs)
+            self.generate_Rs(resource_dir, source_gen_dir, source_dirs)
             self.generate_r(manifest, resource_dir, source_gen_dir)
+            # TODO: check args for RS
             self.compile_aidl(source_dirs, source_gen_dir)
             if self.ndk_build is not None:
                 self.compile_native(project_dir)
