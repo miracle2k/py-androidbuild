@@ -3,8 +3,10 @@
 # distutils
 /dist
 *.egg-info
+/build/
 
-# WingiDE
+# IDEs
+/.idea/
 *.wpr
 
 # Python
