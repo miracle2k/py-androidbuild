@@ -1,12 +1,12 @@
 Python routines to build Android projects
 -----------------------------------------
 
-This is a simple Python module to help you build Android projects. It
-exists because I can't stand Ant.
+This is a simple Python module to help you build Android projects, from code
+to apk. It exists because I can't stand Ant.
 
-This is not a standalone build tool, but a collection of routines with
-which you can build your Android project in Python, or a Python-based
-tool like fabric.
+This is not a standalone build tool, but a collection of routines with which
+you can build your Android project by writing Python code, or by using a
+Python-based tool like `fabric`__.
 
 Tested with Android SDK 2.3 (older versions might not work).
 
@@ -16,8 +16,18 @@ here in detail:
     http://developer.android.com/guide/developing/building/index.html#detailed-build
 
 
+__ http://fabfile.org/
+
+
 Installation
 ~~~~~~~~~~~~
+
+Install the current development version::
+
+    $ easy_install https://github.com/miracle2k/py-androidbuild/tarball/master
+
+
+There is also a version in the Python cheeseshop. but it may be old::
 
     $ easy_install py-androidbuild
 
@@ -38,21 +48,6 @@ The simplest case will look something like this::
 The ``AndroidProject`` class assumes a default Android directory layout,
 that is it espects to find things like a ``./res`` and a ``./src``
 directory next to the ``AndroidManifest.xml``.
-
-For render script you don't need to configure anything,
-it will auto detect renderscript files and run build
-
-If your project contains native code::
-
-	from android.build import AndroidProject
-	
-	project = AndroidProject('AndroidManifest.xml', sdk_dir='/opt/android', ndk_dir="/opt/android-ndk")
-	apk = project.build()
-	apk.sign('keystore', 'alias', 'name')
-	apk.align()
-
-When you set ndk_dir in ``AndroidProject``, it will automatically setup the project for native build
-
 
 Or::
 
@@ -105,7 +100,9 @@ APIs used during a build::
 
     platform = get_platform('/opt/android/sdk', target='10')
     platform.generate_r(...)
+    platform.compile_renderscript(...)
     platform.compile_aidl(...)
+    platform.compile_native()
     platform.compile_java(...)
     platform.dex(...)
     platform.package_resources(...)
@@ -117,6 +114,26 @@ APIs used during a build::
 Here is a build script that I use in production:
 
     https://github.com/miracle2k/android-autostarts/blob/master/fabfile.py
+
+
+Special build steps
+-------------------
+
+Native code
+~~~~~~~~~~~
+
+If your project contains native code, simply pass an ``ndk_dir`` argument when
+creating ``AndroidProject``. When that value is set, the class will include
+the native build steps as well::
+
+    from android.build import AndroidProject
+    project = AndroidProject('AndroidManifest.xml', sdk_dir='/opt/android', ndk_dir="/opt/android-ndk")
+
+
+Renderscript
+~~~~~~~~~~~~
+
+Renderscript is supported. We'll do the right thing automatically.
 
 
 Enabling logging
@@ -161,11 +178,8 @@ things should be easy to implement.
 - Building against extension targets like the Google Maps package
   hasn't been tested and might well not be possible yet.
 
-- Renderscript in Honeycomb requires additional build steps that are
-  not yet implemented.
-
 - ProGuard obfuscation is not implememented.
-
+                                                                                              w
 - Some tests would sure be nice.
 
 Also, referencing "Library projects" doesn't work yet. This is what
