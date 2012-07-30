@@ -487,7 +487,7 @@ class AndroidProject(object):
 
         # Project-specific paths
         self.manifest = path.abspath(manifest)
-        self.project_dir = path.dirname(self.manifest)
+        self.project_dir = project_dir or path.dirname(self.manifest)
         self.resource_dir = path.join(self.project_dir, 'res')
         self.gen_dir = path.join(self.project_dir, 'gen')
         self.source_dir = path.join(self.project_dir, 'src')
