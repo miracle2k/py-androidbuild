@@ -111,10 +111,10 @@ class PlatformTarget(object):
             jarsigner = 'jarsigner',
             javac = 'javac',
         )
-        
+
         if ndk_dir is not None:
             paths['ndk_build'] = path.join(ndk_dir, 'ndk-build.bat' if sys.platform=="win32" else 'ndk-build')
-        
+
         paths.update(custom_paths)
 
         self.dx = Dx(paths['dx'])
@@ -158,7 +158,7 @@ class PlatformTarget(object):
             resource_dir=resource_dir,
             r_output=output_dir,
             include=[self.framework_library]))
-        
+
     def compile_renderscript(self, resource_dir, source_gen_dir, source_dirs):
         """
         compile renderscript files before aapt packaging
@@ -224,7 +224,7 @@ class PlatformTarget(object):
             destdir=output_dir,
             classpath=jar_files,
             bootclasspath=self.framework_library))
-        
+
     def compile_native(self, project_dir):
         """Shortcut for building native code
         """
@@ -380,7 +380,7 @@ def get_platform(sdk_path, ndk_dir, target=None):
     #check ig sdk folder contains platforms folder
     if path.exists(path.join(sdk_path, 'platforms')) == False:
         raise ValueError("sdk path is wrong")
-    
+
     platforms = filter(lambda p: path.isdir(p),
                        map(lambda e: path.join(sdk_path, 'platforms', e),
                            os.listdir(path.join(sdk_path, 'platforms'))))
@@ -457,7 +457,7 @@ class AndroidProject(object):
     of your ``AndroidManifest.xml`` file is used. The ability to
     specify a project directory manually becomes helpful when you
     want to rewrite your manifest file before the build, in particular
-    because Android's ``aapt`` currently (SDK 4.0) does not support 
+    because Android's ``aapt`` currently (SDK 4.0) does not support
     manifest files that are not named ``AndroidManifest.xml``.
 
     Additionally, this class considers the following instance
@@ -471,7 +471,7 @@ class AndroidProject(object):
              place within ./lib. You'll use this to reference things
              like the Android Compatibility Support Libraries.
 
-    When constructing a ``AndroidProject`` instance, zou either need to
+    When constructing a ``AndroidProject`` instance, you either need to
     pass a platform that you have aquired yourself using ``get_platform``,
     or you need to give the path to the Android SDK in ``sdk_dir``.
     Additionally, you may specify an Android API level to build against
