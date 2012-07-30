@@ -482,13 +482,6 @@ class AndroidProject(object):
 
     def __init__(self, manifest, name=None, platform=None, sdk_dir=None,
                  ndk_dir=None, target=None, project_dir=None):
-        if not platform:
-            if not sdk_dir:
-                raise ValueError('You need to provide the SDK path, '
-                                 'or a PlatformTarget instance.')
-            platform = get_platform(sdk_dir, ndk_dir, target)
-            
-        self.platform = platform
 
         self.ndk_dir = ndk_dir
 
@@ -511,7 +504,7 @@ class AndroidProject(object):
             if target is None:
                 target = self.manifest_parsed.find('uses-sdk')\
                     .attrib['{http://schemas.android.com/apk/res/android}targetSdkVersion']
-            platform = get_platform(sdk_dir, target)
+            platform = get_platform(sdk_dir, ndk_dir, target)
 
         self.platform = platform
 
