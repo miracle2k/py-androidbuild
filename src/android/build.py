@@ -108,8 +108,8 @@ class PlatformTarget(object):
                 'apkbuilder.bat' if sys.platform=='win32' else 'apkbuilder'),
             zipalign = path.join(sdk_dir, 'tools',
                 'zipalign.exe' if sys.platform=='win32' else 'zipalign'),
-            jarsigner = 'jarsigner',
-            javac = 'javac',
+            jarsigner = 'jarsigner.exe' if sys.platform=='win32' else 'jarsigner',
+            javac = 'javac.exe' if sys.platform=='win32' else 'javac',
         )
 
         if ndk_dir is not None:

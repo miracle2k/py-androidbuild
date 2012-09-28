@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import sys
 import subprocess
 
 
@@ -71,7 +72,7 @@ class Program(object):
         along to their caller.
         """
         cmdline = " ".join([self.executable] + arguments)
-        process = subprocess.Popen([self.executable] + arguments,
+        process = subprocess.Popen([self.executable] + arguments,shell=True if sys.platform=="win32" else False,
                                    stderr=subprocess.PIPE,
                                    stdout=subprocess.PIPE)
         process.wait()
