@@ -22,7 +22,7 @@ set prog=%~f0
 
 rem Change current directory and drive to where the script is, to avoid
 rem issues with directories containing whitespaces.
-cd /d %~dp0
+cd /d %ANDRID_SDK_DIR%
 
 rem Check we have a valid Java.exe in the path.
 set java_exe=
@@ -30,13 +30,13 @@ call lib\find_java.bat
 if not defined java_exe goto :EOF
 
 set jarfile=sdklib.jar
-set frameworkdir=
+set frameworkdir=tools
 
 if exist %frameworkdir%%jarfile% goto JarFileOk
-    set frameworkdir=lib\
+    set frameworkdir=tools\lib\
 
 if exist %frameworkdir%%jarfile% goto JarFileOk
-    set frameworkdir=..\framework\
+    set frameworkdir=framework\
 
 :JarFileOk
 

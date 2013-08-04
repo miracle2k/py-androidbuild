@@ -34,14 +34,14 @@ prog="${progdir}"/`basename "${prog}"`
 cd "${oldwd}"
 
 jarfile=sdklib.jar
-frameworkdir="$progdir"
+frameworkdir=$ANDROID_SDK_DIR/tools
 if [ ! -r "$frameworkdir/$jarfile" ]
 then
-    frameworkdir=`dirname "$progdir"`/tools/lib
+    frameworkdir=$ANDROID_SDK_DIR/tools/lib
 fi
 if [ ! -r "$frameworkdir/$jarfile" ]
 then
-    frameworkdir=`dirname "$progdir"`/framework
+    frameworkdir=$ANDROID_SDK_DIR/framework
 fi
 if [ ! -r "$frameworkdir/$jarfile" ]
 then
