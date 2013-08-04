@@ -67,30 +67,36 @@ class Program(object):
         return '%s <%s>' % (
             self.__class__.__name__, repr(self.executable))
 
-    def __call__(self, arguments, env=None):
+    def __call__(self, arguments, env=None, shell=False):
         """Note that this returns the command line that was executed,
         so it can be logged.
 
         Child implementations must not forget to pass this return value
         along to their caller.
         """
-        cmdline = " ".join([self.executable] + arguments)
+        cmdline = [self.executable] + arguments
+        if shell and not sys.platform=="win32":
+            # This is required for scripts that lack the +x flag
+            cmdline.insert(0, '/bin/sh')
+        cmdline_str = " ".join(cmdline)
+
         custom_env = os.environ.copy()
         custom_env.update(env or {})
 
         process = subprocess.Popen(
-            [self.executable] + arguments,shell=True if sys.platform=="win32" else False,
+            cmdline,
+            shell=True if sys.platform=="win32" else False,
             env=custom_env,
             stderr=subprocess.PIPE,
             stdout=subprocess.PIPE)
         process.wait()
         if process.returncode != 0:
             raise ProgramFailedError(
-                cmdline,
+                cmdline_str,
                 process.returncode, process.stderr.read(),
                 process.stdout.read())
 
-        return cmdline
+        return cmdline_str
 
 
 class Aapt(Program):
@@ -175,6 +181,7 @@ class Aidl(Program):
         self.extend_args(args, [aidl_file])
         return Program.__call__(self, args)
 
+
 class LlvmRs(Program):
     """Interface to the command line llvm renderscript compiler, ``llvm-rs-cc``
     """
@@ -188,6 +195,7 @@ class LlvmRs(Program):
         for filename in source_files:
             self.extend_args(args, [filename])
         return Program.__call__(self, args)
+
 
 class NdkBuild(Program):
     """Interface to the command line c/c++ compiler, ``ndk-build``
@@ -211,6 +219,7 @@ class NdkClean(Program):
         self.extend_args(args, ["clean"])
         self.extend_args(args, ["-C", project_path])
         return Program.__call__(self, args)
+
 
 class JavaC(Program):
     """Interface to the Java command line compiler, ``javac``.
@@ -314,7 +323,7 @@ class ApkBuilder(Program):
             args.extend(['-nf', item])
         return Program.__call__(
             self, args,
-            {'ANDROID_SDK_DIR': self.framework.sdk_dir})
+            {'ANDROID_SDK_DIR': self.framework.sdk_dir}, shell=True)
 
 
 class JarSigner(Program):
