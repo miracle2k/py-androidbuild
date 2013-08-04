@@ -19,4 +19,4 @@ limitations under the License.
 """
 
 
-__version__ = ('0', '10', '+')
+__version__ = ('0', '10', 'dev')
