@@ -78,6 +78,72 @@ class Apk(File):
         return self.platform.align(self, *a, **kw)
 
 
+def ext(filename, windows_ext):
+    return '%s%s' % (filename, windows_ext) \
+        if sys.platform =='win32' else '%s' % filename
+
+
+class BuildTools(object):
+    """Helper that constructs the path to the build tools (the tools
+    that are found in the build-tools/ folder and are installed via
+    the "Android SDK Build-tools" component).
+
+    Equivalent to:
+        platform/tools/base:/sdklib/src/main/java/com/android/sdklib/BuildToolInfo.java
+    """
+
+    @classmethod
+    def get(cls, sdk_dir, version=None):
+        """Return the tool paths for a given version, or the most recent one.
+
+        loadBuildTools() and loadBuildTool() @
+            platform/tools/base:sdklib/src/main/java/com/android/sdklib/SdkManager.java
+        """
+        all_versions = os.listdir(path.join(sdk_dir, 'build-tools'))
+        if version:
+            if not version in all_versions:
+                raise ValueError('No build tools version %s' % version)
+        elif not all_versions:
+            # Older SDK versions to not have a build-tools folder/package,
+            # but instead of the tools in platform-tools/. Provide
+            # a compatibility set of paths.
+            return cls._get_compat(sdk_dir)
+        else:
+            # No explicit version requested, return the latest one
+            all_versions.sort()
+            version = all_versions[-1]
+
+        return cls(path.join(sdk_dir, 'build-tools', version))
+
+    @classmethod
+    def _get_compat(cls, sdk_dir):
+        """
+        getCompatibilityBuildTools() @
+            platform/tools/base:sdklib/src/main/java/com/android/sdklib/SdkManager.java
+        """
+        tools = cls.__new__(cls)
+        platform_tools = path.join(sdk_dir, 'platform-tools')
+        tools.paths = {
+            'aapt': path.join(platform_tools, ext('aapt', '.exe')),
+            'aidl': path.join(platform_tools, ext('aidl', '.exe')),
+            'llvmrs': path.join(platform_tools, ext('llvm-rs-cc', '.exe')),
+            'dx': path.join(platform_tools, ext('dx', '.bat')),
+            'lib_rs': path.join(platform_tools, 'renderscript', 'include'),
+            'lib_rs_clang': path.join(platform_tools, 'renderscript', 'clang-include')
+        }
+        return tools
+
+    def __init__(self, folder):
+        self.paths = {
+            'aapt': path.join(folder, ext('aapt', '.exe')),
+            'aidl': path.join(folder, ext('aidl', '.exe')),
+            'llvmrs': path.join(folder, ext('llvm-rs-cc', '.exe')),
+            'dx': path.join(folder, ext('dx', '.bat')),
+            'lib_rs': path.join(folder, 'renderscript', 'include'),
+            'lib_rs_clang': path.join(folder, 'renderscript', 'clang-include')
+        }
+
+
 class PlatformTarget(object):
     """Represents a specific platform version provided by the
     Android SDK, and knows how to build Android projects targeting
@@ -92,29 +158,22 @@ class PlatformTarget(object):
         self.sdk_dir = sdk_dir
         self.platform_dir = platform_dir
 
-        # The way these path's are officially constructed can be checked
-        # in ``com.android.sdklib.PlatformTarget`` and
-        # ``com.android.sdklib.SdkConstants``.
+        # Put together the default paths to external tools/libs.
         paths = dict(
-            aapt =path.join(sdk_dir, 'platform-tools',
-                'aapt.exe' if sys.platform=='win32' else 'aapt'),
-            aidl = path.join(sdk_dir, 'platform-tools',
-                'aidl.exe' if sys.platform=='win32' else 'aidl'),
-            llvmrs = path.join(sdk_dir, 'platform-tools',
-                'llvm-rs-cc.exe' if sys.platform=='win32' else 'llvm-rs-cc'),
-            dx = path.join(sdk_dir, 'platform-tools',
-                'dx.bat' if sys.platform=='win32' else 'dx'),
-            apkbuilder = path.join(sdk_dir, 'tools',
-                'apkbuilder.bat' if sys.platform=='win32' else 'apkbuilder'),
-            zipalign = path.join(sdk_dir, 'tools',
-                'zipalign.exe' if sys.platform=='win32' else 'zipalign'),
-            jarsigner = 'jarsigner.exe' if sys.platform=='win32' else 'jarsigner',
-            javac = 'javac.exe' if sys.platform=='win32' else 'javac',
+            # Provided by us because CLI tool not included in SDK
+            apkbuilder=path.join(sdk_dir, 'tools', ext('apkbuilder', '.bat')),
+            # Shipped with Android SDK
+            zipalign=path.join(sdk_dir, 'tools', ext('zipalign', '.exe')),
+            # Java tools
+            jarsigner=ext('jarsigner', '.exe'),
+            javac=ext('javac', '.exe'),
         )
-
+        # Get the most recent build-tools
+        paths.update(BuildTools.get(sdk_dir).paths)
+        # NDK compiler
         if ndk_dir is not None:
-            paths['ndk_build'] = path.join(ndk_dir, 'ndk-build.bat' if sys.platform=="win32" else 'ndk-build')
-
+            paths['ndk_build'] = path.join(ndk_dir, ext('ndk-build', '.bat'))
+        # Add in user overwrites
         paths.update(custom_paths)
 
         self.dx = Dx(paths['dx'])
@@ -134,9 +193,7 @@ class PlatformTarget(object):
 
         self.framework_library = path.join(platform_dir, 'android.jar')
         self.framework_aidl = path.join(platform_dir, 'framework.aidl')
-        self.rs_includes = [
-            path.join(sdk_dir, 'platform-tools/renderscript/include'),
-            path.join(sdk_dir, 'platform-tools/renderscript/clang-include')]
+        self.rs_includes = [paths['lib_rs'], paths['lib_rs_clang']]
 
     def __repr__(self):
         return 'Platform %s <%s>' % (self.version, self.platform_dir)
