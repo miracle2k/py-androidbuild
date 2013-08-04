@@ -174,11 +174,11 @@ class Aidl(Program):
         self.extend_args(args, ['-o%s' % output_folder], output_folder)
         self.extend_args(args, [aidl_file])
         return Program.__call__(self, args)
-    
+
 class LlvmRs(Program):
     """Interface to the command line llvm renderscript compiler, ``llvm-rs-cc``
     """
-    
+
     def __call__(self, resource_dir, resource_gen_dir, source_files, include_dirs):
         args = []
         for include in include_dirs:
@@ -192,7 +192,7 @@ class LlvmRs(Program):
 class NdkBuild(Program):
     """Interface to the command line c/c++ compiler, ``ndk-build``
     """
-    
+
     def __call__(self, project_path):
         """
         project_path

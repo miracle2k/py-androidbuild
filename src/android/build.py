@@ -231,11 +231,11 @@ class PlatformTarget(object):
         if len(files_list) <= 0:
             return
         log.info(self.llvmRs(
-                    path.join(resource_dir, 'raw'),
-                    source_gen_dir,
-                    files_list,
-                    self.rs_includes
-                ))
+            path.join(resource_dir, 'raw'),
+            source_gen_dir,
+            files_list,
+            self.rs_includes
+        ))
 
     def compile_aidl(self, source_dirs, output_dir):
         """Compile .aidl definitions found in ``source_dirs`` into

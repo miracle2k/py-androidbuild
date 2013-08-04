@@ -3,7 +3,6 @@
 import os
 from setuptools import setup, find_packages
 
-
 # Figure out the version.
 import re
 here = os.path.dirname(os.path.abspath(__file__))
