@@ -21,6 +21,7 @@ from os import path
 import shutil
 import tempfile
 import logging
+import pkg_resources
 
 from tools import *
 
@@ -161,7 +162,8 @@ class PlatformTarget(object):
         # Put together the default paths to external tools/libs.
         paths = dict(
             # Provided by us because CLI tool not included in SDK
-            apkbuilder=path.join(sdk_dir, 'tools', ext('apkbuilder', '.bat')),
+            apkbuilder=pkg_resources.resource_filename(
+                __name__, ext('data/apkbuilder', '.bat')),
             # Shipped with Android SDK
             zipalign=path.join(sdk_dir, 'tools', ext('zipalign', '.exe')),
             # Java tools
@@ -181,7 +183,7 @@ class PlatformTarget(object):
         self.aidl = Aidl(paths['aidl'])
         self.llvmRs = LlvmRs(paths['llvmrs'])
         self.zipalign = ZipAlign(paths['zipalign'])
-        self.apkbuilder = ApkBuilder(paths['apkbuilder'])
+        self.apkbuilder = ApkBuilder(paths['apkbuilder'], self)
         self.javac = JavaC(paths['javac'])
         if ndk_dir is not None:
             self.ndk_build = NdkBuild(paths['ndk_build'])

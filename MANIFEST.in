@@ -1,4 +1,5 @@
 include README.rst TODO
 
+recursive-include src/android/data *
 recursive-include tests *
 recursive-exclude tests *.pyc

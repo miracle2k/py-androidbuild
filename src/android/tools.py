@@ -15,6 +15,7 @@ limitations under the License.
 """
 
 import sys
+import os
 import subprocess
 
 
@@ -48,8 +49,10 @@ class ProgramFailedError(RuntimeError):
 
 class Program(object):
 
-    def __init__(self, executable):
+    def __init__(self, executable, framework=None):
         self.executable = executable
+        # Some tools need to know the SDK environment they are running in
+        self.framework = framework
 
     def extend_args(self, args, new, condition=True):
         """Helper which will extend the argument list ``args``
@@ -64,7 +67,7 @@ class Program(object):
         return '%s <%s>' % (
             self.__class__.__name__, repr(self.executable))
 
-    def __call__(self, arguments):
+    def __call__(self, arguments, env=None):
         """Note that this returns the command line that was executed,
         so it can be logged.
 
@@ -72,9 +75,14 @@ class Program(object):
         along to their caller.
         """
         cmdline = " ".join([self.executable] + arguments)
-        process = subprocess.Popen([self.executable] + arguments,shell=True if sys.platform=="win32" else False,
-                                   stderr=subprocess.PIPE,
-                                   stdout=subprocess.PIPE)
+        custom_env = os.environ.copy()
+        custom_env.update(env or {})
+
+        process = subprocess.Popen(
+            [self.executable] + arguments,shell=True if sys.platform=="win32" else False,
+            env=custom_env,
+            stderr=subprocess.PIPE,
+            stdout=subprocess.PIPE)
         process.wait()
         if process.returncode != 0:
             raise ProgramFailedError(
@@ -304,7 +312,9 @@ class ApkBuilder(Program):
             args.extend(['-rj', item])
         for item in native_dirs:
             args.extend(['-nf', item])
-        return Program.__call__(self, args)
+        return Program.__call__(
+            self, args,
+            {'ANDROID_SDK_DIR': self.framework.sdk_dir})
 
 
 class JarSigner(Program):
