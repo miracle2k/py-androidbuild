@@ -130,7 +130,8 @@ class BuildTools(object):
             'llvmrs': path.join(platform_tools, ext('llvm-rs-cc', '.exe')),
             'dx': path.join(platform_tools, ext('dx', '.bat')),
             'lib_rs': path.join(platform_tools, 'renderscript', 'include'),
-            'lib_rs_clang': path.join(platform_tools, 'renderscript', 'clang-include')
+            'lib_rs_clang': path.join(platform_tools, 'renderscript', 'clang-include'),
+            'zipalign': path.join(sdk_dir, 'tools', ext('zipalign', '.exe')),
         }
         return tools
 
@@ -141,7 +142,12 @@ class BuildTools(object):
             'llvmrs': path.join(folder, ext('llvm-rs-cc', '.exe')),
             'dx': path.join(folder, ext('dx', '.bat')),
             'lib_rs': path.join(folder, 'renderscript', 'include'),
-            'lib_rs_clang': path.join(folder, 'renderscript', 'clang-include')
+            'lib_rs_clang': path.join(folder, 'renderscript', 'clang-include'),
+            # zipalign moved to the build-tools late, I think. I am noticing
+            # it in API level 21. Potentially for older build-tools versions
+            # we need a version check, and then fall back to the _get_compat()
+            # version of zipalign.
+            'zipalign': path.join(folder, ext('zipalign', '.exe'))
         }
 
 
@@ -164,8 +170,6 @@ class PlatformTarget(object):
             # Provided by us because CLI tool not included in SDK
             apkbuilder=pkg_resources.resource_filename(
                 __name__, ext('data/apkbuilder', '.bat')),
-            # Shipped with Android SDK
-            zipalign=path.join(sdk_dir, 'tools', ext('zipalign', '.exe')),
             # Java tools
             jarsigner=ext('jarsigner', '.exe'),
             javac=ext('javac', '.exe'),
